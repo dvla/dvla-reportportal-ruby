@@ -5,13 +5,8 @@ module ParallelReportPortal
     class Formatter
     
       def initialize(config)
-        start_clocks
         start_background_thread.priority = Thread.main.priority - 1 
         register_event_handlers(config)
-      end
-      
-      def clock
-        (ParallelReportPortal.monotonic_time - @start_event_time + @start_time).round
       end
       
       private
@@ -26,7 +21,7 @@ module ParallelReportPortal
          :test_step_started, 
          :test_step_finished].each do |event_name|
           config.on_event(event_name) do |event|
-            report.public_send(event_name, event, clock)
+            report.public_send(event_name, event, ParallelReportPortal.clock)
           end
         end
         config.on_event :test_run_started,  &method(:handle_test_run_started )
@@ -34,7 +29,7 @@ module ParallelReportPortal
       end
       
       def handle_test_run_started(event)
-        report.launch_started(clock)
+        report.launch_started(ParallelReportPortal.clock)
       end
       
       def background_queue
@@ -51,15 +46,10 @@ module ParallelReportPortal
       end
       
       def handle_test_run_finished(event)
-        report.feature_finished(clock)
-        report.launch_finished(clock)
+        report.feature_finished(ParallelReportPortal.clock)
+        report.launch_finished(ParallelReportPortal.clock)
         sleep 0.01 while !background_queue.empty? || background_queue.num_waiting == 0
         @background_thread.kill
-      end
-      
-      def start_clocks
-        @start_time = ((Time.now.to_f * 1000).to_i).freeze
-        @start_event_time = ParallelReportPortal.monotonic_time.freeze
       end
     
     end

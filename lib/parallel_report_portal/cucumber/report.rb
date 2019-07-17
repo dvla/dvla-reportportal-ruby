@@ -1,4 +1,5 @@
 require 'faraday'
+require 'tree'
 require 'cucumber/formatter/hook_query_visitor'
 
 require_relative 'array_decorator'
@@ -22,83 +23,48 @@ module ParallelReportPortal
       }
       
       def initialize(start_time, background_queue)
-        @http = http_connection
         @feature = nil
         @queue = background_queue
+        @tree = Tree::TreeNode.new( 'root' ) 
       end
       
       def launch_started(start_time)
-        f = File.new(Report.launch_id_file, 'a+')
-        begin
-          f.flock(File::LOCK_EX)
-          if f.size == 0
-            description = 'test launch'
-            resp = @http.post('launch') do |req|
-              req.body = {
-                name: 'Parallel', 
-                start_time: start_time, 
-                tags: [], 
-                description: 'a description', 
-                mode: 'DEBUG'
-              }.to_json
-            end
-            @launch_id = JSON.parse(resp.body)['id'] if resp.success?
-            f.write(launch_id)
+        ParallelReportPortal.file_open_exlock_and_block(ParallelReportPortal.launch_id_file, 'a+' ) do |file|
+          if file.size == 0
+            @launch_id = ParallelReportPortal.req_launch_started(start_time)
+            file.write(@launch_id)
+            file.flush
           else
-            @launch_id = f.readline
+             @launch_id = file.readline
           end
-        ensure
-          f.flock(File::LOCK_UN)
-          f.close
         end
       end
       
       def launch_finished(clock)
-        resp = @http.put("launch/#{launch_id}/finish") do |req|
-          req.body = { end_time: clock }.to_json
+        @tree.postordered_each do |node|
+          ParallelReportPortal.req_feature_finished(node.content, clock) unless node.is_root?
         end
+        ParallelReportPortal.req_launch_finished(launch_id, clock)
       end
       
       def feature_started(feature, clock)
-        resp = @http.post('item') do |req|
-          req.body = {
-            start_time: clock,
-            name: "#{feature.keyword}: #{feature.name}",
-            type: 'TEST',
-            launch_id: launch_id,
-            tags: feature.tags.map(&:name),
-            description: feature.file
-          }.to_json
-        end
-        feature_id = JSON.parse(resp.body)['id'] if resp.success?
+        parent_id = hierarchy(feature, clock)
+        ParallelReportPortal.req_feature_started(launch_id, parent_id, feature, clock)
       end
       
       def feature_finished(clock)
         if @feature
-          resp = @http.put("item/#{@feature.id}") do |req|
-            req.body = { end_time: clock }.to_json
-          end
+          resp = ParallelReportPortal.req_feature_finished(@feature.id, clock)
         end
       end
             
       def test_case_started(event, clock)
         test_case = event.test_case
         feature = current_feature(test_case.feature, clock)
-        resp = @http.post("item/#{@feature.id}") do |req|
-          req.body = {
-            start_time: clock,
-            tags: test_case.tags.map(&:name),
-            name: "#{test_case.keyword}: #{test_case.name}",
-            type: 'STEP',
-            launch_id: launch_id,
-            description: test_case.location.to_s
-          }.to_json
-        end
-        @test_case_id = JSON.parse(resp.body)['id'] if resp.success?
+        @test_case_id = ParallelReportPortal.req_test_case_started(launch_id, feature.id, test_case, clock)
       end
       
       def test_case_finished(event, clock)
-        test_case = event.test_case
         result = event.result
         status = result.to_sym
         failure_message = nil
@@ -106,18 +72,13 @@ module ParallelReportPortal
           status = :failed
           failure_message = result.message
         end
-        resp = @http.put("item/#{@test_case_id}") do |req|
-          req.body = {
-            end_time: clock,
-            status: status
-          }.to_json
-        end
+        resp = ParallelReportPortal.req_test_case_finished(@test_case_id, status, clock)
       end
       
       def test_step_started(event, clock)
         @queue << proc do
           test_step = event.test_step
-          if not_a_hook?(test_step)
+          if !hook?(test_step)
             step_source = test_step.source.last
             detail = "#{step_source.keyword} #{step_source.text}"
             if step_source.multiline_arg.doc_string?
@@ -125,14 +86,8 @@ module ParallelReportPortal
             elsif step_source.multiline_arg.data_table?
               detail << step_source.multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
             end
-            resp = @http.post('log') do |req|
-              req.body = {
-                item_id: @test_case_id,
-                message: detail,
-                level: status_to_level(:trace),
-                time: clock,
-              }.to_json
-            end
+            
+            ParallelReportPortal.req_log(@test_case_id, detail, status_to_level(:trace), clock)
           end
         end
       end
@@ -142,7 +97,7 @@ module ParallelReportPortal
           test_step = event.test_step
           result = event.result
           status = result.to_sym
-          if not_a_hook?(test_step)
+          if !hook?(test_step)
             step_source = test_step.source.last
             detail = "#{step_source.text}"
           
@@ -154,14 +109,8 @@ module ParallelReportPortal
                        else
                          sprintf("Undefined step: %s:\n%s", test_step.text, test_step.source.last.backtrace_line)
                        end
-              @http.post('log') do |req|
-                req.body = { 
-                  item_id: @test_case_id,
-                  time: clock,
-                  level: level,
-                  message: detail
-                }.to_json
-              end
+              
+              ParallelReportPortal.req_log(@test_case_id, detail, level, clock)
             end
           end
         end
@@ -169,24 +118,29 @@ module ParallelReportPortal
     
       private
       
-      at_exit do
-        if Report.parallel?
-          if ParallelTests.first_process?
-            ParallelTests.wait_for_other_processes_to_finish
-            File.delete(Report.launch_id_file)
+      def hierarchy(feature, clock)
+        node = nil
+        path_components = feature.location.file.split(File::SEPARATOR)
+        ParallelReportPortal.file_open_exlock_and_block(ParallelReportPortal.hierarchy_file, 'a+b' ) do |file|
+          @tree = Marshal.load(File.read(file)) if file.size > 0 
+          node = @tree.root
+          path_components[0..-2].each do |component|
+            next_node = node[component]
+            unless next_node
+              id = ParallelReportPortal.req_hierarchy(launch_id, "Folder: #{component}", node.content, 'SUITE', [], nil, clock )
+              next_node = Tree::TreeNode.new(component, id)
+              node << next_node
+              node = next_node
+            else
+              node = next_node
+            end
           end
-        else
-          File.delete(Report.launch_id_file)
+          file.truncate(0)
+          file.write(Marshal.dump(@tree))
+          file.flush
         end
-      end
-      
-      def self.launch_id_file
-        pid = Report.parallel? ? Process.ppid : Process.pid
-        @lock_file ||= Pathname(Dir.tmpdir) + ("report_portal_tracking_file_#{pid}.lck")
-      end
-      
-      def self.parallel?
-        !ENV['PARALLEL_PID_FILE'].nil?
+        
+        node.content
       end
       
       def current_feature(feature, clock)
@@ -198,8 +152,8 @@ module ParallelReportPortal
         end
       end
       
-      def not_a_hook?(test_step)
-        !::Cucumber::Formatter::HookQueryVisitor.new(test_step).hook?
+      def hook?(test_step)
+        ::Cucumber::Formatter::HookQueryVisitor.new(test_step).hook?
       end
       
       def status_to_level(status)
@@ -215,16 +169,6 @@ module ParallelReportPortal
         end
       end
       
-      def http_connection
-        url = "https://report-portal.int-ac.dvla.gov.uk/api/v1/tacho-drivers-card"
-        Faraday.new(
-          url: url,
-          headers: {
-            'Content-Type'  => 'application/json',
-            'Authorization' => "Bearer a0f7e79c-381d-44ab-8d03-f7143207691e"
-          }
-        )
-      end
     
     end
   end

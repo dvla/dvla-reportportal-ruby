@@ -1,0 +1,16 @@
+pipeline:
+
+  #####################################################################################################
+  # 2. Promote gem to Nexus
+  #####################################################################################################
+  build:
+    when:
+      branch: master
+    image: dtr.int-ac.dvla.gov.uk/dvla-base-images/qe-ruby:2.6.3-0.0.4
+    secrets: [NEXUS_USER, NEXUS_PASSWORD]
+    commands:
+      - apk add --update git --update alpine-sdk  --no-cache
+      - bundle
+      - gem install nexus
+      - gem build parallel_report_portal.gemspec
+      - gem nexus --url https://nexus-internal.iep.dvla.gov.uk/nexus/content/repositories/gems-internal --credential $$NEXUS_USER:$$NEXUS_PASSWORD parallel_report_portal*gem
