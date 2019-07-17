@@ -5,7 +5,7 @@ module ParallelReportPortal
     class Formatter
     
       def initialize(config)
-        start_background_thread.priority = Thread.main.priority - 1 
+        start_background_thread.priority = Thread.main.priority + 1 
         register_event_handlers(config)
       end
       
@@ -39,7 +39,7 @@ module ParallelReportPortal
       def start_background_thread
         @background_thread ||= Thread.new do
           loop do
-            code = background_queue.pop
+            code = background_queue.shift
             code.call
           end
         end

@@ -76,42 +76,38 @@ module ParallelReportPortal
       end
       
       def test_step_started(event, clock)
-        @queue << proc do
-          test_step = event.test_step
-          if !hook?(test_step)
-            step_source = test_step.source.last
-            detail = "#{step_source.keyword} #{step_source.text}"
-            if step_source.multiline_arg.doc_string?
-              detail << %(\n"""\n#{step_source.multiline_arg.content}\n""")
-            elsif step_source.multiline_arg.data_table?
-              detail << step_source.multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
-            end
-            
-            ParallelReportPortal.req_log(@test_case_id, detail, status_to_level(:trace), clock)
+        test_step = event.test_step
+        if !hook?(test_step)
+          step_source = test_step.source.last
+          detail = "#{step_source.keyword} #{step_source.text}"
+          if step_source.multiline_arg.doc_string?
+            detail << %(\n"""\n#{step_source.multiline_arg.content}\n""")
+          elsif step_source.multiline_arg.data_table?
+            detail << step_source.multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
           end
+          
+          ParallelReportPortal.req_log(@test_case_id, detail, status_to_level(:trace), clock)
         end
       end
       
       def test_step_finished(event, clock)
-        @queue << proc do
-          test_step = event.test_step
-          result = event.result
-          status = result.to_sym
-          if !hook?(test_step)
-            step_source = test_step.source.last
-            detail = "#{step_source.text}"
-          
-            if [:failed, :pending, :undefined].include?(status)
-              level = :error
-              detail = if [:failed, :pending].include?(status)
-                         ex = result.exception
-                         sprintf("%s: %s\n  %s", ex.class.name, ex.message, ex.backtrace.join("\n  "))
-                       else
-                         sprintf("Undefined step: %s:\n%s", test_step.text, test_step.source.last.backtrace_line)
-                       end
-              
-              ParallelReportPortal.req_log(@test_case_id, detail, level, clock)
-            end
+        test_step = event.test_step
+        result = event.result
+        status = result.to_sym
+        if !hook?(test_step)
+          step_source = test_step.source.last
+          detail = "#{step_source.text}"
+        
+          if [:failed, :pending, :undefined].include?(status)
+            level = :error
+            detail = if [:failed, :pending].include?(status)
+                       ex = result.exception
+                       sprintf("%s: %s\n  %s", ex.class.name, ex.message, ex.backtrace.join("\n  "))
+                     else
+                       sprintf("Undefined step: %s:\n%s", test_step.text, test_step.source.last.backtrace_line)
+                     end
+            
+            ParallelReportPortal.req_log(@test_case_id, detail, level, clock)
           end
         end
       end

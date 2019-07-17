@@ -22,15 +22,16 @@ module ParallelReportPortal
     yield configuration
   end
   
-#   at_exit do
-#     if ParallelReportPortal.parallel?
-#       if ParallelTests.first_process?
-#         ParallelTests.wait_for_other_processes_to_finish
-#         File.delete(ParallelReportPortal.launch_id_file)
-#       end
-#     else
-#       File.delete(ParallelReportPortal.launch_id_file)
-#     end
-#     File.delete(ParallelReportPortal.hierarchy_file)
-#   end
+  at_exit do
+    if ParallelReportPortal.parallel?
+      if ParallelTests.first_process?
+        ParallelTests.wait_for_other_processes_to_finish
+        File.delete(ParallelReportPortal.launch_id_file)
+        File.delete(ParallelReportPortal.hierarchy_file)
+      end
+    else
+      File.delete(ParallelReportPortal.launch_id_file)
+      File.delete(ParallelReportPortal.hierarchy_file)
+    end
+  end
 end
