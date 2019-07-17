@@ -9,13 +9,13 @@ Gem::Specification.new do |spec|
   spec.email         = ["nigel.brookes-thomas@dvla.gov.uk"]
 
   spec.summary       = %q{Parallel Tests integration with ReportPortal.}
-  spec.description   = %q{A longer description.}
-  spec.homepage      = "http://foo.bar"
+  spec.description   = %q{This formatter will cope with both parallel and normal cucumber.}
+  spec.homepage      = "https://collaboration.dvla.gov.uk/bitbucket/projects/QE/repos/dvla-reportportal-ruby/browse"
 
-  spec.metadata["allowed_push_host"] = "TODO: Set to 'http://mygemserver.com'"
+  spec.metadata["allowed_push_host"] = "https://nexus-internal.iep.dvla.gov.uk/nexus/content/groups/gems"
 
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "http://github.com"
+  spec.metadata["source_code_uri"] = "https://collaboration.dvla.gov.uk/bitbucket/projects/QE/repos/dvla-reportportal-ruby/browse"
   # spec.metadata["changelog_uri"] = "TODO: Put your gem's CHANGELOG.md URL here."
 
   # Specify which files should be added to the gem when it is released.
@@ -27,10 +27,13 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
+  spec.add_development_dependency "bump", "~> 0.8"
   spec.add_development_dependency "bundler", "~> 2.0"
   spec.add_development_dependency "rake", "~> 10.0"
   spec.add_development_dependency "rspec", "~> 3.0"
+  spec.add_development_dependency "pry", "~> 0.12"
   
   spec.add_runtime_dependency 'faraday', '1.0.0.pre.rc1'
   spec.add_runtime_dependency 'parallel_tests', '~> 2.29.1'
+  spec.add_runtime_dependency 'rubytree', '~> 1.0'
 end
