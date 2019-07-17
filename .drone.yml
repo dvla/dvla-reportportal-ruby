@@ -10,6 +10,7 @@ pipeline:
     secrets: [NEXUS_USER, NEXUS_PASSWORD]
     commands:
       - apk add --update git --update alpine-sdk  --no-cache
+      - gem install bundler
       - bundle
       - gem install nexus
       - gem build parallel_report_portal.gemspec
