@@ -22,9 +22,8 @@ module ParallelReportPortal
         unknown: 'UNKNOWN' 
       }
       
-      def initialize(start_time, background_queue)
+      def initialize(start_time)
         @feature = nil
-        @queue = background_queue
         @tree = Tree::TreeNode.new( 'root' ) 
       end
       

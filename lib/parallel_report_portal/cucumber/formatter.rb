@@ -12,7 +12,7 @@ module ParallelReportPortal
       private
       
       def report
-        @report ||= Report.new(@start_time, background_queue)
+        @report ||= Report.new(@start_time)
       end
       
       def register_event_handlers(config)
@@ -21,7 +21,7 @@ module ParallelReportPortal
          :test_step_started, 
          :test_step_finished].each do |event_name|
           config.on_event(event_name) do |event|
-            report.public_send(event_name, event, ParallelReportPortal.clock)
+            background_queue << proc { report.public_send(event_name, event, ParallelReportPortal.clock) }
           end
         end
         config.on_event :test_run_started,  &method(:handle_test_run_started )
@@ -29,7 +29,7 @@ module ParallelReportPortal
       end
       
       def handle_test_run_started(event)
-        report.launch_started(ParallelReportPortal.clock)
+        background_queue << proc { report.launch_started(ParallelReportPortal.clock) }
       end
       
       def background_queue
@@ -46,8 +46,10 @@ module ParallelReportPortal
       end
       
       def handle_test_run_finished(event)
-        report.feature_finished(ParallelReportPortal.clock)
-        report.launch_finished(ParallelReportPortal.clock)
+        background_queue << proc do
+          report.feature_finished(ParallelReportPortal.clock)
+          report.launch_finished(ParallelReportPortal.clock)
+        end
         sleep 0.01 while !background_queue.empty? || background_queue.num_waiting == 0
         @background_thread.kill
       end
