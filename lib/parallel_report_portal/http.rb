@@ -47,12 +47,18 @@ module ParallelReportPortal
     # Will raise an exception if a launch cannot be started
     # or return the feature id if successful
     def req_feature_started(launch_id, parent_id, feature, time)
+        description = if feature.description
+                        feature.description.split("\n").map(&:strip).join(' ')
+                      else
+                        feature.file
+                      end
+        
         req_hierarchy(launch_id, 
                       "#{feature.keyword}: #{feature.name}", 
                       parent_id, 
                       'TEST', 
                       feature.tags.map(&:name), 
-                      feature.file, 
+                      description, 
                       time )
     end
     
