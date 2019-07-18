@@ -35,6 +35,10 @@ module ParallelReportPortal
     def pid
       pid = parallel? ? Process.ppid : Process.pid
     end
+    
+    def delete_file(filename)
+      File.delete(filename) if File.exist?(filename)
+    end
   
   end
 end

@@ -26,12 +26,12 @@ module ParallelReportPortal
     if ParallelReportPortal.parallel?
       if ParallelTests.first_process?
         ParallelTests.wait_for_other_processes_to_finish
-        File.delete(ParallelReportPortal.launch_id_file)
-        File.delete(ParallelReportPortal.hierarchy_file)
+        delete_file(launch_id_file)
+        delete_file(hierarchy_file)
       end
     else
-      File.delete(ParallelReportPortal.launch_id_file)
-      File.delete(ParallelReportPortal.hierarchy_file)
+      delete_file(launch_id_file)
+      delete_file(hierarchy_file)
     end
   end
 end
