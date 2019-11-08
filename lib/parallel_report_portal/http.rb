@@ -1,7 +1,13 @@
+require 'logger'
+
 module ParallelReportPortal
   # A collection of methods for communicating with the ReportPortal 
   # REST interface.
   module HTTP
+
+    # Creating class level logger and setting log level
+    @@logger = Logger.new(STDOUT)
+    @@logger.level = Logger::ERROR
     
     # Get a preconstructed Faraday HTTP connection
     # which has the endpont and headers ready populated.
@@ -32,7 +38,7 @@ module ParallelReportPortal
       if resp.success?
         JSON.parse(resp.body)['id']
       else
-        raise "Launch failed with response code #{resp.status} -- message #{resp.body}"
+        @@logger.error("Launch failed with response code #{resp.status} -- message #{resp.body}")
       end
     end
     
@@ -52,13 +58,13 @@ module ParallelReportPortal
                       else
                         feature.file
                       end
-        
-        req_hierarchy(launch_id, 
-                      "#{feature.keyword}: #{feature.name}", 
-                      parent_id, 
-                      'TEST', 
-                      feature.tags.map(&:name), 
-                      description, 
+
+        req_hierarchy(launch_id,
+                      "#{feature.keyword}: #{feature.name}",
+                      parent_id,
+                      'TEST',
+                      feature.tags.map(&:name),
+                      description,
                       time )
     end
     
@@ -79,7 +85,7 @@ module ParallelReportPortal
       if resp.success?
         JSON.parse(resp.body)['id']
       else
-        raise "Starting a heirarchy failed with response code #{resp.status} -- message #{resp.body}"
+        @@logger.warn("Starting a heirarchy failed with response code #{resp.status} -- message #{resp.body}")
       end
     end
   
@@ -107,7 +113,7 @@ module ParallelReportPortal
         if resp.success?
           @test_case_id = JSON.parse(resp.body)['id'] if resp.success?
         else
-          raise "Starting a test case failed with response code #{resp.status} -- message #{resp.body}"
+          @@logger.warn("Starting a test case failed with response code #{resp.status} -- message #{resp.body}")
         end
     end
     
