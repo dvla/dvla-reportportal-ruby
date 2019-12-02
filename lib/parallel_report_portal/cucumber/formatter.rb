@@ -3,18 +3,22 @@ require_relative 'report'
 module ParallelReportPortal
   module Cucumber
     class Formatter
-    
+
       def initialize(config)
         start_background_thread.priority = Thread.main.priority + 1 
         register_event_handlers(config)
       end
-      
+
+      def embed(src, mime_type, label)
+        ParallelReportPortal.send_file(:info, src, label, ParallelReportPortal.clock, mime_type)
+      end
+
       private
-      
+
       def report
         @report ||= Report.new(@start_time)
       end
-      
+
       def register_event_handlers(config)
         [:test_case_started, 
          :test_case_finished, 
