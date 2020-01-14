@@ -1,4 +1,5 @@
 require 'logger'
+require 'tempfile'
 
 module ParallelReportPortal
   # A collection of methods for communicating with the ReportPortal 
@@ -8,20 +9,44 @@ module ParallelReportPortal
     # Creating class level logger and setting log level
     @@logger = Logger.new(STDOUT)
     @@logger.level = Logger::ERROR
-    
+
+    def url
+      "#{ParallelReportPortal.configuration.endpoint}/#{ParallelReportPortal.configuration.project}"
+    end
+
+    def authorization_header
+      "Bearer #{ParallelReportPortal.configuration.uuid}"
+    end
+
     # Get a preconstructed Faraday HTTP connection
     # which has the endpont and headers ready populated.
     # This object is memoized.
-    def http_connection      
+    def http_connection
       @http_connection ||= Faraday.new(
-        url: "#{ParallelReportPortal.configuration.endpoint}/#{ParallelReportPortal.configuration.project}",
+        url: url,
         headers: {
           'Content-Type'  => 'application/json',
-          'Authorization' => "Bearer #{ParallelReportPortal.configuration.uuid}"
+          'Authorization' => authorization_header
         }
       )
     end
-    
+
+    # Get a preconstructed Faraday HTTP multipart connection
+    # which has the endpont and headers ready populated.
+    # This object is memoized.
+    def http_multipart_connection
+      @http_multipart_connection ||= Faraday.new(
+        url: url,
+        headers: {
+          'Authorization' => authorization_header
+        }
+      ) do |conn|
+        conn.request :multipart
+        conn.request :url_encoded
+        conn.adapter :net_http
+      end
+    end
+
     # Send a request to ReportPortal to start a launch.
     # Will raise an exception if a launch cannot be started
     # or return the launch id if successful
@@ -136,6 +161,34 @@ module ParallelReportPortal
           level: level,
           time: time,
         }.to_json
+      end
+    end
+
+    def send_file(status, path, label = nil, time = now, mime_type='image/png')
+      unless File.file?(path)
+        extension = ".#{MIME::Types[mime_type].first.extensions.first}"
+        temp = Tempfile.open(['file',extension])
+        temp.binmode
+        temp.write(Base64.decode64(path))
+        temp.rewind
+        path = temp
+      end
+
+      File.open(File.realpath(path), 'rb') do |file|
+        label ||= File.basename(file)
+
+        json = { level: status, message: label, item_id: @test_case_id, time: time, file: { name: File.basename(file) } }
+
+        json_file = Tempfile.new
+        json_file << [json].to_json
+        json_file.rewind
+
+        resp = http_multipart_connection.post("log") do |req|
+          req.body = {
+            json_request_part: Faraday::UploadIO.new(json_file, 'application/json'),
+            file: Faraday::UploadIO.new(file, mime_type)
+          }
+        end
       end
     end
   end
