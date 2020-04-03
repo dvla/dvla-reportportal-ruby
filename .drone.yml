@@ -6,7 +6,7 @@ pipeline:
   build:
     when:
       branch: master
-    image: 714782054810.dkr.ecr.eu-west-2.amazonaws.com/base-images/qe-ruby:2.6.3-0.0.5
+    image: 714782054810.dkr.ecr.eu-west-2.amazonaws.com/base-images/qe-ruby:2.7.0
     secrets: [NEXUS_USER, NEXUS_PASSWORD]
     commands:
       - apk add --update git --update alpine-sdk  --no-cache
