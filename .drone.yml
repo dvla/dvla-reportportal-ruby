@@ -6,7 +6,7 @@ pipeline:
   build:
     when:
       branch: master
-    image: dtr.int-ac.dvla.gov.uk/dvla-base-images/qe-ruby:2.6.3-0.0.4
+    image: 714782054810.dkr.ecr.eu-west-2.amazonaws.com/base-images/qe-ruby:2.6.3-0.0.5
     secrets: [NEXUS_USER, NEXUS_PASSWORD]
     commands:
       - apk add --update git --update alpine-sdk  --no-cache
@@ -14,4 +14,4 @@ pipeline:
       - bundle
       - gem install nexus
       - gem build parallel_report_portal.gemspec
-      - gem nexus --url https://nexus-internal.iep.dvla.gov.uk/nexus/content/repositories/gems-internal --credential $$NEXUS_USER:$$NEXUS_PASSWORD parallel_report_portal*gem
+      - gem nexus --url https://nexus.int-ac.dvla.gov.uk/repository/gem-private/  parallel_report_portal*gem
