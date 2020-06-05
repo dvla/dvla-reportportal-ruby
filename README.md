@@ -6,6 +6,16 @@ TODO: Delete this and the text above, and describe your gem
 
 ## Installation
 
+The gem is published to the internal Nexus gem server. To use this gem in your project you must make sure that the Nexus server is included at the top of your `Gemfile`.
+
+```ruby
+source 'https://rubygems.org'
+
+# add the internal gem server (for internal gems)
+# bundler prefers last 'source' first
+source 'https://nexus.tooling.dvla.gov.uk/repository/gem-private/'
+```
+
 Add this line to your application's Gemfile:
 
 ```ruby
