@@ -21,13 +21,28 @@ module ParallelReportPortal
   def self.configure
     yield configuration
   end
+
+  def sleep_while_processes_finish
+    return unless ENV["TEST_ENV_NUMBER"]
+    exit_limit = ENV['EXIT_LIMIT'] || 3
+    exit_counter = 0
+    initial_sleep = 1
+    loop do
+      if ParallelTests.number_of_running_processes <= 1
+        break
+      elsif exit_counter == exit_limit
+        ParallelTests.stop_all_processes
+        break
+      end
+      sleep(initial_sleep)
+      initial_sleep += 3
+    end
+  end
   
   at_exit do
     if ParallelReportPortal.parallel?
       if ParallelTests.first_process?
-        puts "Before wait_for_other_processes_to_finish"
-        ParallelTests.wait_for_other_processes_to_finish
-        puts "After wait_for_other_processes_to_finish"
+        wait_for_other_processes_to_finish
         delete_file(launch_id_file)
         delete_file(hierarchy_file)
       end
