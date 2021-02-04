@@ -24,9 +24,13 @@ module ParallelReportPortal
 
   def wait_while_processes_finish
     return unless ENV["TEST_ENV_NUMBER"]
-    exit_limit = ENV['EXIT_LIMIT'] || 3
+    # ENV['RP_PROC_WAIT_TO_CLOSE_RETRY_LIMIT'] is the break out limit of retries before closing down
+    exit_limit = ENV['RP_PROC_WAIT_TO_CLOSE_RETRY_LIMIT'] || 3
     exit_counter = 0
-    initial_sleep = 1
+    # ENV['RP_PROC_WAIT_TO_CLOSE_SLEEP'] Is the initial sleep in the loop to retry
+    # and check if the processes have completed, this will be incremented by 30 secs
+    # every loop.
+    initial_wait_time = ENV['RP_PROC_WAIT_TO_CLOSE_SLEEP'] || 30
     loop do
       if ParallelTests.number_of_running_processes <= 1
         break
@@ -34,8 +38,9 @@ module ParallelReportPortal
         ParallelTests.stop_all_processes
         break
       end
-      sleep(initial_sleep)
-      initial_sleep += 3
+      sleep(initial_wait_time)
+      exit_counter += 1
+      initial_wait_time += 30
     end
   end
   
