@@ -22,7 +22,7 @@ module ParallelReportPortal
     yield configuration
   end
 
-  def wait_while_processes_finish
+  def self.wait_while_processes_finish
     return unless ENV["TEST_ENV_NUMBER"]
     # ENV['RP_PROC_WAIT_TO_CLOSE_RETRY_LIMIT'] is the break out limit of retries before closing down
     exit_limit = ENV['RP_PROC_WAIT_TO_EXIT_RETRY_LIMIT'] || 3
