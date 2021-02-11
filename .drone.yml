@@ -6,7 +6,7 @@ platform:
   arch: amd64
 
 steps:
-  - name: build
+  - name: Build & Publish
     pull: if-not-exists
     image: 714782054810.dkr.ecr.eu-west-2.amazonaws.com/base-images/qe-ruby:2.7.0
     commands:
