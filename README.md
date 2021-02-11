@@ -1,3 +1,5 @@
+[![Build Status](https://drone1.tooling.dvla.gov.uk/api/badges/QE/dvla-reportportal-ruby/status.svg)](https://drone1.tooling.dvla.gov.uk/QE/dvla-reportportal-ruby)
+
 # ParallelReportPortal
 
 Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/parallel_report_portal`. To experiment with that code, run `bin/console` for an interactive prompt.
