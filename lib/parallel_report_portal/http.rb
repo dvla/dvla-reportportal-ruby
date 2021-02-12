@@ -35,7 +35,6 @@ module ParallelReportPortal
         end
       end
     end
-  end
 
     # Get a preconstructed Faraday HTTP multipart connection
     # which has the endpont and headers ready populated.
