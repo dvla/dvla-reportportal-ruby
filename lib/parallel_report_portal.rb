@@ -23,9 +23,7 @@ module ParallelReportPortal
   at_exit do
     if ParallelReportPortal.parallel?
       if ParallelTests.first_process?
-        puts "Before wait_for_other_processes_to_finish"
         ParallelTests.wait_for_other_processes_to_finish
-        puts "After wait_for_other_processes_to_finish"
         delete_file(launch_id_file)
         delete_file(hierarchy_file)
       end
