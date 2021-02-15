@@ -25,10 +25,15 @@ module ParallelReportPortal
       @http_connection ||= Faraday.new(
         url: url,
         headers: {
-          'Content-Type'  => 'application/json',
+          'Content-Type' => 'application/json',
           'Authorization' => authorization_header
         }
-      )
+      ) do |f|
+        f.adapter :net_http_persistent, pool_size: 5 do |http|
+          # yields Net::HTTP::Persistent
+          http.idle_timeout = 100
+        end
+      end
     end
 
     # Get a preconstructed Faraday HTTP multipart connection
@@ -43,7 +48,10 @@ module ParallelReportPortal
       ) do |conn|
         conn.request :multipart
         conn.request :url_encoded
-        conn.adapter :net_http
+        conn.adapter :net_http_persistent, pool_size: 5 do |http|
+          # yields Net::HTTP::Persistent
+          http.idle_timeout = 100
+        end
       end
     end
 

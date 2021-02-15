@@ -16,11 +16,6 @@ steps:
       - gem install nexus
       - gem build parallel_report_portal.gemspec
       - gem nexus --url https://nexus.tooling.dvla.gov.uk/repository/gem-private/ parallel_report_portal*gem
-    environment:
-      NEXUS_PASSWORD:
-        from_secret: NEXUS_PASSWORD
-      NEXUS_USER:
-        from_secret: NEXUS_USER
     when:
       branch:
         - master
