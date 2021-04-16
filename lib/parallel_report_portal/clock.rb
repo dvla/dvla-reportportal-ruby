@@ -1,23 +1,13 @@
 module ParallelReportPortal
+  # This module is responsilbe for the timekeeping for the tests.
   module Clock
-  
-          
-    def monotonic_time
-      Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    end
-    
-    def start_time
-      @start_time = ((Time.now.to_f * 1000).to_i).freeze
-    end
-    
-    def start_event_time
-      @start_event_time = ParallelReportPortal.monotonic_time.freeze
-    end
-    
-  
+    # Get the current time.
+    # 
+    # This is based on the Unix time stamp and is in milliseconds.
+    # 
+    # @return [Integer] the number of milliseconds since the Unix epoc.
     def clock
-      (monotonic_time - start_event_time + start_time).round
+      (Time.now.to_f * 1000).to_i
     end		
-  
   end
 end
