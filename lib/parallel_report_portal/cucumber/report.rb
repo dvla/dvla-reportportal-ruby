@@ -1,6 +1,5 @@
 require 'faraday'
 require 'tree'
-require 'cucumber/formatter/hook_query_visitor'
 
 require_relative 'array_decorator'
 
@@ -148,7 +147,7 @@ module ParallelReportPortal
       end
       
       def hook?(test_step)
-        ::Cucumber::Formatter::HookQueryVisitor.new(test_step).hook?
+        ! test_step.source.last.respond_to?(:keyword)
       end
       
       def status_to_level(status)

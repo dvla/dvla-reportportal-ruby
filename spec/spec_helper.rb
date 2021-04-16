@@ -1,5 +1,8 @@
 require "bundler/setup"
 require "parallel_report_portal"
+require "parallel_report_portal/clock"
+require "parallel_report_portal/http"
+require "parallel_report_portal/file_utils"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
