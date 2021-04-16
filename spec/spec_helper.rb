@@ -4,6 +4,8 @@ require "parallel_report_portal/clock"
 require "parallel_report_portal/http"
 require "parallel_report_portal/file_utils"
 
+require 'yaml'
+
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = ".rspec_status"
