@@ -39,7 +39,7 @@ module ParallelReportPortal
     attr_reader :tags
     # @return [Boolean] true if this is a debug run (this launch will appear
     #   on the debug tab in Report Portal).
-    attr_accessor :debug
+    attr_reader :debug
     # @return [String] a textual description of this launch.
     attr_accessor :description
     # @return [Array<String>] an array of attributes to attach to this launch
@@ -68,15 +68,31 @@ module ParallelReportPortal
     # e.g.
     #   configuration.tags="one,two, three"
     #   #=> ["one", "two", "three"]
+    # 
+    # param [String | Array<String>] taglist a list of tags to set
     def tags=(taglist)
       if taglist.is_a?(String)
-        @tags = taglist.split(',').each(&:chomp)
+        @tags = taglist.split(',').map(&:strip)
       elsif taglist.is_a?(Array)
         @tags = taglist
       else 
         @tags = []
       end
       tags
+    end
+
+
+    # Enables the debug flag which is sent to Report Portal. If this flag is set
+    # Report Portal will include this launch in its 'debug' tab.
+    # 
+    # param [Boolean | String] value if the value is a Boolean, it will take that value
+    #   if it is a String, it will set values of 'true' to +true+, else all values will be false.
+    def debug=(value)
+      @debug = if [true, false].include?(value)
+                 value
+               else
+                 value.to_s.downcase.strip == 'true'
+               end
     end
 
     # Sets the attributes for the launch. If an array is provided, the array is used,
@@ -86,9 +102,11 @@ module ParallelReportPortal
     # e.g.
     #   configuration.tags="one,two, three"
     #   #=> ["one", "two", "three"]
+    # 
+    # param [String | Array<String>] taglist a list of tags to set
     def attributes=(attrlist)
       if attrlist.is_a?(String)
-        @attributes = attrlist.split(',').each(&:chomp)
+        @attributes = attrlist.split(',').map(&:strip)
       elsif attrlist.is_a?(Array)
         @attributes = attrlist
       else 
@@ -106,14 +124,13 @@ module ParallelReportPortal
     def load_configuration_file
       files = Dir['./config/*'] + Dir['./*']
       files
-        .map(&:downcase)
-        .filter { |fn| fn.end_with?('/report_portal.yml') }
+        .filter { |fn| fn.downcase.end_with?('/report_portal.yml') }
         .first
-        .then { |fn| File.read(fn) }
+        .then { |fn| fn ? File.read(fn) : '' }
         .then { |ys| YAML.safe_load(ys, symbolize_names: true) }
         .then do |yaml|
           ATTRIBUTES.each do |attr|
-            send(:"#{attr}=", yaml[attr])
+            send(:"#{attr}=", yaml[attr]) if yaml&.fetch(attr, nil)
           end
         end
     end
