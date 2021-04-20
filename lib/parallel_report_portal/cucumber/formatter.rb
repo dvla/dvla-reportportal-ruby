@@ -25,7 +25,7 @@ module ParallelReportPortal
          :test_step_started, 
          :test_step_finished].each do |event_name|
           config.on_event(event_name) do |event|
-            background_queue << proc { report.public_send(event_name, event, ParallelReportPortal.clock) }
+            background_queue << -> { report.public_send(event_name, event, ParallelReportPortal.clock) }
           end
         end
         config.on_event :test_run_started,  &method(:handle_test_run_started )

@@ -4,6 +4,10 @@ require "parallel_report_portal/clock"
 require "parallel_report_portal/http"
 require "parallel_report_portal/file_utils"
 
+require 'webmock/rspec'
+
+require 'faraday'
+require 'ostruct'
 require 'yaml'
 
 RSpec.configure do |config|
@@ -17,3 +21,5 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 end
+
+WebMock.disable_net_connect!
