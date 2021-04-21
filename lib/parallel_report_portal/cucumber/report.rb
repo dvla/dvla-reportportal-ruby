@@ -1,8 +1,6 @@
 require 'faraday'
 require 'tree'
 
-require_relative 'array_decorator'
-
 module ParallelReportPortal
   module Cucumber
     class Report

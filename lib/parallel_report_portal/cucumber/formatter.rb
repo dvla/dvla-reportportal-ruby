@@ -2,15 +2,17 @@ require_relative 'report'
 
 module ParallelReportPortal
   module Cucumber
+    # Formatter supporting the Cucumber formatter API.
+    # This is the class which does the heavy-lifting by
+    # integrating with cucumber.
     class Formatter
 
-      def initialize(config)
+      # Create a new formatter instance
+      # 
+      # @param [Cucumber::Configuration] cucumber_config the cucumber configuration environment
+      def initialize(cucumber_config)
         start_background_thread.priority = Thread.main.priority + 1 
-        register_event_handlers(config)
-      end
-
-      def embed(src, mime_type, label)
-        ParallelReportPortal.send_file(:info, src, label, ParallelReportPortal.clock, mime_type)
+        register_event_handlers(cucumber_config)
       end
 
       private
