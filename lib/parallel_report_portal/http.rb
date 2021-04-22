@@ -150,21 +150,27 @@ module ParallelReportPortal
     # @return [String] uuid the UUID of the test case
     def req_test_case_started(launch_id, feature_id, test_case, time)
       resp = ParallelReportPortal.http_connection.post("item/#{feature_id}") do |req|
-          req.body = {
-            start_time: time,
-            tags: test_case.tags.map(&:name),
-            name: "#{test_case.keyword}: #{test_case.name}",
-            type: 'STEP',
-            launch_id: launch_id,
-            description: test_case.location.to_s,
-            attributes: test_case.tags
-          }.to_json
-        end
-        if resp.success?
-          @test_case_id = JSON.parse(resp.body)['id'] if resp.success?
-        else
-          @@logger.warn("Starting a test case failed with response code #{resp.status} -- message #{resp.body}")
-        end
+
+        keyword = if test_case.respond_to?(:feature)
+                    test_case.feature.keyword
+                  else
+                    test_case.keyword
+                  end
+        req.body = {
+          start_time: time,
+          tags: test_case.tags.map(&:name),
+          name: "#{keyword}: #{test_case.name}",
+          type: 'STEP',
+          launch_id: launch_id,
+          description: test_case.location.to_s,
+          attributes: test_case.tags
+        }.to_json
+      end
+      if resp.success?
+        @test_case_id = JSON.parse(resp.body)['id'] if resp.success?
+      else
+        @@logger.warn("Starting a test case failed with response code #{resp.status} -- message #{resp.body}")
+      end
     end
     
     # Request that the test case be finished

@@ -10,6 +10,7 @@ require 'webmock/rspec'
 
 require 'faraday'
 require 'ostruct'
+require 'tree'
 require 'yaml'
 
 RSpec.configure do |config|
