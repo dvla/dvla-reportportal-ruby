@@ -111,13 +111,13 @@ RSpec.describe ParallelReportPortal::HTTP do
       stub_request(:post, "#{rp_endpoint}/item/#{parent_id}")
         .to_return(body: {id: item_id}.to_json )
       
-      time = Time.now
+      time = 0
       id = rp.req_hierarchy(launch_id, 'child', parent_id, 'TEST', [], 'desc', time )
 
       expect(id).to eq(item_id)
       expect(WebMock).to have_requested(:post, "#{rp_endpoint}/item/#{parent_id}")
         .with( body: {
-          start_time: time.to_s,
+          start_time: time,
           name: 'child',
           type: 'TEST',
           launch_id: launch_id,
@@ -126,6 +126,7 @@ RSpec.describe ParallelReportPortal::HTTP do
           description: 'desc'
         } )
     end
+
 
     it 'issues a feature finished request' do
       stub_request(:put, "#{rp_endpoint}/item/#{item_id}")
@@ -138,14 +139,14 @@ RSpec.describe ParallelReportPortal::HTTP do
     it 'issues a test case started request' do
       stub_request(:post, "#{rp_endpoint}/item/#{parent_id}")
         .to_return(body: {id: item_id}.to_json )
-      time = Time.now
+      time = 0
       test_case = OpenStruct.new(keyword: 'Step', location: 123, tags: [], name: 'test case')
 
       id = rp.req_test_case_started(launch_id, parent_id, test_case, time)
       expect(id).to eq(item_id)
       expect(WebMock).to have_requested(:post, "#{rp_endpoint}/item/#{parent_id}")
         .with( body: {
-          start_time: time.to_s,
+          start_time: time,
           tags: test_case.tags,
           name: "#{test_case.keyword}: #{test_case.name}",
           type: 'STEP',
@@ -154,6 +155,7 @@ RSpec.describe ParallelReportPortal::HTTP do
           attributes: test_case.tags
         })
     end
+
 
     it 'issues a test case finished request' do
       stub_request(:put, "#{rp_endpoint}/item/#{item_id}")
@@ -165,7 +167,7 @@ RSpec.describe ParallelReportPortal::HTTP do
 
     it 'issues a log request' do
       stub_request(:post, "#{rp_endpoint}/log")
-      time = Time.now
+      time = 0
 
       rp.req_log(item_id, 'a message', 'info', time)
       expect(WebMock).to have_requested(:post, "#{rp_endpoint}/log")
@@ -173,7 +175,7 @@ RSpec.describe ParallelReportPortal::HTTP do
           item_id: item_id,
           message: 'a message',
           level: 'info',
-          time: time.to_s,
+          time: time
         } )
     end
 

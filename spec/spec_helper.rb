@@ -8,6 +8,7 @@ require "parallel_report_portal/cucumber/report"
 
 require 'webmock/rspec'
 
+require 'cucumber'
 require 'faraday'
 require 'ostruct'
 require 'tree'

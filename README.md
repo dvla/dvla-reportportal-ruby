@@ -1,22 +1,12 @@
-[![Build Status](https://drone1.tooling.dvla.gov.uk/api/badges/QE/dvla-reportportal-ruby/status.svg)](https://drone1.tooling.dvla.gov.uk/QE/dvla-reportportal-ruby)
-
 # ParallelReportPortal
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/parallel_report_portal`. To experiment with that code, run `bin/console` for an interactive prompt.
+This gem is a Ruby-Cucumber formatter which sends the test output to [Report Portal](https://reportportal.io).
 
-TODO: Delete this and the text above, and describe your gem
+This formatter supports plain 'ol Cucumber tests and those wrapped with [parallel_tests](https://rubygems.org/gems/parallel_tests). 
+
+It also supports Cucumber 3.x and 4+ (Cucumber implementations using cucumber-messages).
 
 ## Installation
-
-The gem is published to the internal Nexus gem server. To use this gem in your project you must make sure that the Nexus server is included at the top of your `Gemfile`.
-
-```ruby
-source 'https://rubygems.org'
-
-# add the internal gem server (for internal gems)
-# bundler prefers last 'source' first
-source 'https://nexus.tooling.dvla.gov.uk/repository/gem-private/'
-```
 
 Add this line to your application's Gemfile:
 
@@ -34,7 +24,25 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+### With cucumber
+
+```
+cucumber -f ParallelReportPortal::Cucumber::Formatter
+```
+
+With cucumber and another formatter (so you can see the testoutput)
+
+```
+cucumber -f ParallelReportPortal::Cucumber::Formatter --out /dev/null -f progress
+```
+
+### With parallel_tests
+
+```
+parallel_cucumber -- -f ParallelReportPortal::Cucumber::Formatter -- features/
+ ```
+
+
 
 ## Development
 
@@ -44,4 +52,4 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/parallel_report_portal.
+Bug reports and pull requests are welcome on GitHub at https://github.com/dvla/dvla-reportportal-ruby.

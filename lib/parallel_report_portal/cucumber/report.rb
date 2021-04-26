@@ -23,7 +23,7 @@ module ParallelReportPortal
 
       
       # Create a new instance of the report
-      def initialize(ast_lookup)
+      def initialize(ast_lookup = nil)
         @feature = nil
         @tree = Tree::TreeNode.new( 'root' ) 
         @ast_lookup = ast_lookup
