@@ -1,22 +1,12 @@
-[![Build Status](https://drone1.tooling.dvla.gov.uk/api/badges/QE/dvla-reportportal-ruby/status.svg)](https://drone1.tooling.dvla.gov.uk/QE/dvla-reportportal-ruby)
-
 # ParallelReportPortal
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/parallel_report_portal`. To experiment with that code, run `bin/console` for an interactive prompt.
+This gem is a Ruby-Cucumber formatter which sends the test output to [Report Portal](https://reportportal.io).
 
-TODO: Delete this and the text above, and describe your gem
+This formatter supports plain 'ol Cucumber tests and those wrapped with [parallel_tests](https://rubygems.org/gems/parallel_tests). 
+
+It also supports Cucumber 3.x and 4+ (Cucumber implementations using cucumber-messages).
 
 ## Installation
-
-The gem is published to the internal Nexus gem server. To use this gem in your project you must make sure that the Nexus server is included at the top of your `Gemfile`.
-
-```ruby
-source 'https://rubygems.org'
-
-# add the internal gem server (for internal gems)
-# bundler prefers last 'source' first
-source 'https://nexus.tooling.dvla.gov.uk/repository/gem-private/'
-```
 
 Add this line to your application's Gemfile:
 
@@ -34,7 +24,46 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+### Configuration
+
+The formatter supports configuration via a config file or via environment variables
+
+#### Configuration file
+
+It will search for a file called `report_portal.yml` or `REPORT_PORTAL.YML` in `./config` and `./`. It expects this file to contain the standard Report Portal configuration options -- see the Report Portal documentation.
+
+#### Environment variables
+
+It will search for the following environment variables which may be in upper or lowercase (the official client defers to lower case, this is available here for compatibility).
+
+* `RP_UUID` - the user's UUID for this Report Portal instance which must be created in advance
+* `RP_ENDPOINT` - the endpoint for this Report Portal instance 
+* `RP_PROJECT` - the Report Portal project name which must be created in advance and this user added as a member 
+* `RP_LAUNCH` - the name of this 'launch'  
+* `RP_DEBUG` - *optional* if set to the string value `true` it will instruct Report Portal to add the output of these tests to the debug tab 
+* `RP_DESCRIPTION` - *optional* a textual description of the launch 
+* `RP_TAGS` - *optional* a string of comma separated tags 
+* `RP_ATTRIBUTES` - *optional* a string of comma separated attributes 
+
+### With cucumber
+
+```
+cucumber -f ParallelReportPortal::Cucumber::Formatter
+```
+
+With cucumber and another formatter (so you can see the testoutput)
+
+```
+cucumber -f ParallelReportPortal::Cucumber::Formatter --out /dev/null -f progress
+```
+
+### With parallel_tests
+
+```
+parallel_cucumber -- -f ParallelReportPortal::Cucumber::Formatter -- features/
+ ```
+
+
 
 ## Development
 
@@ -44,4 +73,4 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/parallel_report_portal.
+Bug reports and pull requests are welcome on GitHub at https://github.com/dvla/dvla-reportportal-ruby.

@@ -10,10 +10,17 @@ module ParallelReportPortal
     @@logger = Logger.new(STDOUT)
     @@logger.level = Logger::ERROR
 
+    # Construct the Report Portal project URL (as a string) based 
+    # on the config settings.
+    # 
+    # @return [String] URL the report portal base URL
     def url
       "#{ParallelReportPortal.configuration.endpoint}/#{ParallelReportPortal.configuration.project}"
     end
 
+    # Helper method for constructing the +Bearer+ header
+    # 
+    # @return [String] header the bearer header value
     def authorization_header
       "Bearer #{ParallelReportPortal.configuration.uuid}"
     end
@@ -21,6 +28,8 @@ module ParallelReportPortal
     # Get a preconstructed Faraday HTTP connection
     # which has the endpont and headers ready populated.
     # This object is memoized.
+    # 
+    # @return [Faraday::Connection] connection the HTTP connection object
     def http_connection
       @http_connection ||= Faraday.new(
         url: url,
@@ -30,7 +39,6 @@ module ParallelReportPortal
         }
       ) do |f|
         f.adapter :net_http_persistent, pool_size: 5 do |http|
-          # yields Net::HTTP::Persistent
           http.idle_timeout = 100
         end
       end
@@ -39,6 +47,8 @@ module ParallelReportPortal
     # Get a preconstructed Faraday HTTP multipart connection
     # which has the endpont and headers ready populated.
     # This object is memoized.
+    # 
+    # @return [Faraday::Connection] connection the HTTP connection object
     def http_multipart_connection
       @http_multipart_connection ||= Faraday.new(
         url: url,
@@ -56,8 +66,7 @@ module ParallelReportPortal
     end
 
     # Send a request to ReportPortal to start a launch.
-    # Will raise an exception if a launch cannot be started
-    # or return the launch id if successful
+    # It will bubble up any Faraday connection exceptions.
     def req_launch_started(time)
       resp = http_connection.post('launch') do |req|
               req.body = {
@@ -65,7 +74,8 @@ module ParallelReportPortal
                 start_time: time, 
                 tags: ParallelReportPortal.configuration.tags, 
                 description: ParallelReportPortal.configuration.description, 
-                mode: (ParallelReportPortal.configuration.debug == 'true' ? 'DEBUG' : 'DEFAULT' )
+                mode: (ParallelReportPortal.configuration.debug ? 'DEBUG' : 'DEFAULT' ),
+                attributes: ParallelReportPortal.configuration.attributes
               }.to_json
             end
       if resp.success?
@@ -75,16 +85,18 @@ module ParallelReportPortal
       end
     end
     
-    # Request a launch be terminated. 
+    # Send a request to Report Portal to finish a launch.
+    # It will bubble up any Faraday connection exceptions.
     def req_launch_finished(launch_id, time)
-      resp = ParallelReportPortal.http_connection.put("launch/#{launch_id}/finish") do |req|
+      ParallelReportPortal.http_connection.put("launch/#{launch_id}/finish") do |req|
         req.body = { end_time: time }.to_json
       end
     end
     
     # Send a request to ReportPortal to start a feature.
-    # Will raise an exception if a launch cannot be started
-    # or return the feature id if successful
+    # It will bubble up any Faraday connection exceptions.
+    # 
+    # @return [String] id the UUID of the feature
     def req_feature_started(launch_id, parent_id, feature, time)
         description = if feature.description
                         feature.description.split("\n").map(&:strip).join(' ')
@@ -101,6 +113,9 @@ module ParallelReportPortal
                       time )
     end
     
+    # Sends a request to Report Portal to add an item into its hierarchy.
+    # 
+    # @return [String] uuid the UUID of the newly created child
     def req_hierarchy(launch_id, name, parent, type, tags, description, time )
       resource = 'item'
       resource += "/#{parent}" if parent
@@ -111,7 +126,8 @@ module ParallelReportPortal
           type: type,
           launch_id: launch_id,
           tags: tags,
-          description: description
+          description: description,
+          attributes: tags
         }.to_json
       end
       
@@ -122,32 +138,39 @@ module ParallelReportPortal
       end
     end
   
-    # Request that a feature be finished
+    # Send a request to Report Portal that a feature has completed.
     def req_feature_finished(feature_id, time)
-      resp = ParallelReportPortal.http_connection.put("item/#{feature_id}") do |req|
+      ParallelReportPortal.http_connection.put("item/#{feature_id}") do |req|
         req.body = { end_time: time }.to_json
       end
     end
   
     # Send a request to ReportPortal to start a test case.
-    # Will raise an exception if a launch cannot be started
-    # or return the test case id if successful
+    # 
+    # @return [String] uuid the UUID of the test case
     def req_test_case_started(launch_id, feature_id, test_case, time)
       resp = ParallelReportPortal.http_connection.post("item/#{feature_id}") do |req|
-          req.body = {
-            start_time: time,
-            tags: test_case.tags.map(&:name),
-            name: "#{test_case.keyword}: #{test_case.name}",
-            type: 'STEP',
-            launch_id: launch_id,
-            description: test_case.location.to_s
-          }.to_json
-        end
-        if resp.success?
-          @test_case_id = JSON.parse(resp.body)['id'] if resp.success?
-        else
-          @@logger.warn("Starting a test case failed with response code #{resp.status} -- message #{resp.body}")
-        end
+
+        keyword = if test_case.respond_to?(:feature)
+                    test_case.feature.keyword
+                  else
+                    test_case.keyword
+                  end
+        req.body = {
+          start_time: time,
+          tags: test_case.tags.map(&:name),
+          name: "#{keyword}: #{test_case.name}",
+          type: 'STEP',
+          launch_id: launch_id,
+          description: test_case.location.to_s,
+          attributes: test_case.tags
+        }.to_json
+      end
+      if resp.success?
+        @test_case_id = JSON.parse(resp.body)['id'] if resp.success?
+      else
+        @@logger.warn("Starting a test case failed with response code #{resp.status} -- message #{resp.body}")
+      end
     end
     
     # Request that the test case be finished
@@ -161,6 +184,7 @@ module ParallelReportPortal
     end
     
     
+    # Request that Report Portal records a log record
     def req_log(test_case_id, detail, level, time)
       resp = ParallelReportPortal.http_connection.post('log') do |req|
         req.body = {
@@ -172,19 +196,20 @@ module ParallelReportPortal
       end
     end
 
-    def send_file(status, path, label = nil, time = ParallelReportPortal.clock, mime_type = 'image/png')
-      unless File.file?(path)
-        extension = ".#{MIME::Types[mime_type].first.extensions.first}"
-        temp = Tempfile.open(['file',extension])
-        temp.binmode
-        temp.write(Base64.decode64(path))
-        temp.rewind
-        path = temp
-      end
 
+    # Request that Report Portal attach a file to the test case.
+    # 
+    # @param status [String] the status level of the log, e.g. info, warn
+    # @param path [String] the fully qualified path of the file to attach
+    # @param label [String] a label to add to the attachment, defaults to the filename
+    # @param time [Integer] the time in milliseconds for the attachment
+    # @param mime_type [String] the mimetype of the attachment
+    def send_file(status, path, label = nil, time = ParallelReportPortal.clock, mime_type = 'image/png')
       File.open(File.realpath(path), 'rb') do |file|
         label ||= File.basename(file)
 
+        # where did @test_case_id come from? ok, I know where it came from but this 
+        # really should be factored out of here and state handled better
         json = { level: status, message: label, item_id: @test_case_id, time: time, file: { name: File.basename(file) } }
 
         json_file = Tempfile.new

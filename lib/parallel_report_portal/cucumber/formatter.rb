@@ -2,21 +2,31 @@ require_relative 'report'
 
 module ParallelReportPortal
   module Cucumber
+    # Formatter supporting the Cucumber formatter API.
+    # This is the class which does the heavy-lifting by
+    # integrating with cucumber.
     class Formatter
 
-      def initialize(config)
-        start_background_thread.priority = Thread.main.priority + 1 
-        register_event_handlers(config)
-      end
+      CucumberMessagesVersion=[4,0,0]
 
-      def embed(src, mime_type, label)
-        ParallelReportPortal.send_file(:info, src, label, ParallelReportPortal.clock, mime_type)
+      # Create a new formatter instance
+      # 
+      # @param [Cucumber::Configuration] cucumber_config the cucumber configuration environment
+      def initialize(cucumber_config)
+        @ast_lookup = if (::Cucumber::VERSION.split('.').map(&:to_i) <=> CucumberMessagesVersion) > 0
+          require 'cucumber/formatter/ast_lookup'
+          ::Cucumber::Formatter::AstLookup.new(cucumber_config)
+        else
+          nil
+        end
+        start_background_thread.priority = Thread.main.priority + 1 
+        register_event_handlers(cucumber_config)
       end
 
       private
 
       def report
-        @report ||= Report.new(@start_time)
+        @report ||= Report.new(@ast_lookup)
       end
 
       def register_event_handlers(config)
@@ -25,7 +35,7 @@ module ParallelReportPortal
          :test_step_started, 
          :test_step_finished].each do |event_name|
           config.on_event(event_name) do |event|
-            background_queue << proc { report.public_send(event_name, event, ParallelReportPortal.clock) }
+            background_queue << -> { report.public_send(event_name, event, ParallelReportPortal.clock) }
           end
         end
         config.on_event :test_run_started,  &method(:handle_test_run_started )

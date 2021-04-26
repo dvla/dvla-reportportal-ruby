@@ -1,11 +1,10 @@
 require 'faraday'
 require 'tree'
-require 'cucumber/formatter/hook_query_visitor'
-
-require_relative 'array_decorator'
 
 module ParallelReportPortal
   module Cucumber
+    # Report object. This handles the management of the state heirarchy and
+    # the issuing of the requests to the HTTP module. 
     class Report
       
       attr_reader :launch_id
@@ -21,12 +20,24 @@ module ParallelReportPortal
         fatal: 'FATAL', 
         unknown: 'UNKNOWN' 
       }
+
       
-      def initialize(start_time)
+      # Create a new instance of the report
+      def initialize(ast_lookup = nil)
         @feature = nil
         @tree = Tree::TreeNode.new( 'root' ) 
+        @ast_lookup = ast_lookup
       end
       
+      # Issued to start a launch. It is possilbe that this method could be called
+      # from multiple processes for the same launch if this is being run with
+      # parallel tests enabled. A temporary launch file will be created (using
+      # exclusive locking). The first time this method is called it will write the
+      # launch id to the launch file, subsequent calls by other processes will read
+      # this launch id and use that.
+      # 
+      # @param start_time [Integer] the millis from the epoch 
+      # @return [String] the UUID of this launch
       def launch_started(start_time)
         ParallelReportPortal.file_open_exlock_and_block(ParallelReportPortal.launch_id_file, 'a+' ) do |file|
           if file.size == 0
@@ -36,9 +47,13 @@ module ParallelReportPortal
           else
              @launch_id = file.readline
           end
+          @launch_id
         end
       end
       
+      # Called to finish a launch. Any open children items will be closed in the process.
+      # 
+      # @param clock [Integer] the millis from the epoch
       def launch_finished(clock)
         @tree.postordered_each do |node|
           ParallelReportPortal.req_feature_finished(node.content, clock) unless node.is_root?
@@ -46,8 +61,12 @@ module ParallelReportPortal
         ParallelReportPortal.req_launch_finished(launch_id, clock)
       end
       
+      # Called to indicate that a feature has started.
+      # 
+      # @param 
       def feature_started(feature, clock)
         parent_id = hierarchy(feature, clock)
+        feature = feature.feature if using_cucumber_messages?
         ParallelReportPortal.req_feature_started(launch_id, parent_id, feature, clock)
       end
       
@@ -58,8 +77,9 @@ module ParallelReportPortal
       end
             
       def test_case_started(event, clock)
-        test_case = event.test_case
-        feature = current_feature(test_case.feature, clock)
+        test_case = lookup_test_case(event.test_case)
+        feature = lookup_feature(event.test_case)
+        feature = current_feature(feature, clock)
         @test_case_id = ParallelReportPortal.req_test_case_started(launch_id, feature.id, test_case, clock)
       end
       
@@ -77,12 +97,12 @@ module ParallelReportPortal
       def test_step_started(event, clock)
         test_step = event.test_step
         if !hook?(test_step)
-          step_source = test_step.source.last
+          step_source = lookup_step_source(test_step)
           detail = "#{step_source.keyword} #{step_source.text}"
-          if step_source.multiline_arg.doc_string?
-            detail << %(\n"""\n#{step_source.multiline_arg.content}\n""")
-          elsif step_source.multiline_arg.data_table?
-            detail << step_source.multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
+          if (using_cucumber_messages? ? test_step : step_source).multiline_arg.doc_string?
+            detail << %(\n"""\n#{(using_cucumber_messages? ? test_step : step_source).multiline_arg.content}\n""")
+          elsif (using_cucumber_messages? ? test_step : step_source).multiline_arg.data_table?
+            detail << (using_cucumber_messages? ? test_step : step_source).multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
           end
           
           ParallelReportPortal.req_log(@test_case_id, detail, status_to_level(:trace), clock)
@@ -94,7 +114,7 @@ module ParallelReportPortal
         result = event.result
         status = result.to_sym
         if !hook?(test_step)
-          step_source = test_step.source.last
+          step_source = lookup_step_source(test_step)
           detail = "#{step_source.text}"
         
           if [:failed, :pending, :undefined].include?(status)
@@ -112,10 +132,18 @@ module ParallelReportPortal
       end
     
       private
+
+      def using_cucumber_messages?
+        @ast_lookup != nil
+      end
       
       def hierarchy(feature, clock)
         node = nil
-        path_components = feature.location.file.split(File::SEPARATOR)
+        path_components = if using_cucumber_messages?
+                            feature.uri.split(File::SEPARATOR)
+                          else
+                            feature.location.file.split(File::SEPARATOR)
+                          end
         ParallelReportPortal.file_open_exlock_and_block(ParallelReportPortal.hierarchy_file, 'a+b' ) do |file|
           @tree = Marshal.load(File.read(file)) if file.size > 0 
           node = @tree.root
@@ -137,6 +165,30 @@ module ParallelReportPortal
         
         node.content
       end
+
+      def lookup_feature(test_case)
+        if using_cucumber_messages?
+          @ast_lookup.gherkin_document(test_case.location.file)
+        else
+          test_case.feature
+        end
+      end
+
+      def lookup_test_case(test_case)
+        if using_cucumber_messages?
+          @ast_lookup.gherkin_document(test_case.location.file).feature
+        else
+          test_case
+        end
+      end
+
+      def lookup_step_source(step)
+        if using_cucumber_messages?
+          @ast_lookup.step_source(step).step
+        else
+          step.source.last
+        end
+      end
       
       def current_feature(feature, clock)
         if @feature&.feature == feature
@@ -148,7 +200,11 @@ module ParallelReportPortal
       end
       
       def hook?(test_step)
-        ::Cucumber::Formatter::HookQueryVisitor.new(test_step).hook?
+        if using_cucumber_messages?
+          test_step.hook?
+        else
+          ! test_step.source.last.respond_to?(:keyword)
+        end
       end
       
       def status_to_level(status)

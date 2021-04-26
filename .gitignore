@@ -8,6 +8,9 @@
 /spec/reports/
 /tmp/
 
+# Appraisal lock files
+/gemfiles/*.lock
+
 # rspec failure tracking
 .rspec_status
 .DS_Store
