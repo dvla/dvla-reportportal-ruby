@@ -24,6 +24,27 @@ Or install it yourself as:
 
 ## Usage
 
+### Configuration
+
+The formatter supports configuration via a config file or via environment variables
+
+#### Configuration file
+
+It will search for a file called `report_portal.yml` or `REPORT_PORTAL.YML` in `./config` and `./`. It expects this file to contain the standard Report Portal configuration options -- see the Report Portal documentation.
+
+#### Environment variables
+
+It will search for the following environment variables which may be in upper or lowercase (the official client defers to lower case, this is available here for compatibility).
+
+* `RP_UUID` - the user's UUID for this Report Portal instance which must be created in advance
+* `RP_ENDPOINT` - the endpoint for this Report Portal instance 
+* `RP_PROJECT` - the Report Portal project name which must be created in advance and this user added as a member 
+* `RP_LAUNCH` - the name of this 'launch'  
+* `RP_DEBUG` - *optional* if set to the string value `true` it will instruct Report Portal to add the output of these tests to the debug tab 
+* `RP_DESCRIPTION` - *optional* a textual description of the launch 
+* `RP_TAGS` - *optional* a string of comma separated tags 
+* `RP_ATTRIBUTES` - *optional* a string of comma separated attributes 
+
 ### With cucumber
 
 ```
