@@ -147,12 +147,12 @@ RSpec.describe ParallelReportPortal::HTTP do
       expect(WebMock).to have_requested(:post, "#{rp_endpoint}/item/#{parent_id}")
         .with( body: {
           start_time: time,
-          tags: test_case.tags,
+          tags: test_case.tags.map(&:name),
           name: "#{test_case.keyword}: #{test_case.name}",
           type: 'STEP',
           launch_id: launch_id,
           description: test_case.location.to_s, 
-          attributes: test_case.tags
+          attributes: test_case.tags.map(&:name)
         })
     end
 

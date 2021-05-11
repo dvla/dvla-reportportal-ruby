@@ -3,7 +3,7 @@ require 'tree'
 
 module ParallelReportPortal
   module Cucumber
-    # Report object. This handles the management of the state heirarchy and
+    # Report object. This handles the management of the state hierarchy and
     # the issuing of the requests to the HTTP module. 
     class Report
       
@@ -113,22 +113,21 @@ module ParallelReportPortal
         test_step = event.test_step
         result = event.result
         status = result.to_sym
-        if !hook?(test_step)
+        detail = nil
+        if [:failed, :pending, :undefined].include?(status)
+          if [:failed, :pending].include?(status)
+            ex = result.exception
+            detail = sprintf("%s: %s\n  %s", ex.class.name, ex.message, ex.backtrace.join("\n  "))
+          elsif !hook?(test_step)
+            step_source = lookup_step_source(test_step)
+            detail = sprintf("Undefined step: %s:\n%s", step_source.text, step_source.source.last.backtrace_line)
+          end
+        elsif !hook?(test_step)
           step_source = lookup_step_source(test_step)
           detail = "#{step_source.text}"
-        
-          if [:failed, :pending, :undefined].include?(status)
-            level = :error
-            detail = if [:failed, :pending].include?(status)
-                       ex = result.exception
-                       sprintf("%s: %s\n  %s", ex.class.name, ex.message, ex.backtrace.join("\n  "))
-                     else
-                       sprintf("Undefined step: %s:\n%s", test_step.text, test_step.source.last.backtrace_line)
-                     end
-            
-            ParallelReportPortal.req_log(@test_case_id, detail, level, clock)
-          end
         end
+        ParallelReportPortal.req_log(@test_case_id, detail, status_to_level(status), clock) if detail
+
       end
     
       private
@@ -176,7 +175,7 @@ module ParallelReportPortal
 
       def lookup_test_case(test_case)
         if using_cucumber_messages?
-          @ast_lookup.gherkin_document(test_case.location.file).feature
+          @ast_lookup.scenario_source(test_case).scenario
         else
           test_case
         end
