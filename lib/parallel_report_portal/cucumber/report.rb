@@ -175,7 +175,12 @@ module ParallelReportPortal
 
       def lookup_test_case(test_case)
         if using_cucumber_messages?
-          @ast_lookup.scenario_source(test_case).scenario
+          sc = @ast_lookup.scenario_source(test_case)
+          if sc.respond_to?(:scenario)
+            @ast_lookup.scenario_source(test_case).scenario
+          else
+            @ast_lookup.scenario_source(test_case).scenario_outline
+          end
         else
           test_case
         end

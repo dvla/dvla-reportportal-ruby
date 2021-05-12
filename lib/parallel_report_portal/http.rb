@@ -162,7 +162,7 @@ module ParallelReportPortal
           name: "#{keyword}: #{test_case.name}",
           type: 'STEP',
           launch_id: launch_id,
-          description: test_case.location.to_s,
+          description: test_case.description,
           attributes: test_case.tags.map(&:name)
         }.to_json
       end

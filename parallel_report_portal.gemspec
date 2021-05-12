@@ -5,7 +5,7 @@ require "parallel_report_portal/version"
 Gem::Specification.new do |spec|
   spec.name          = "parallel_report_portal"
   spec.version       = ParallelReportPortal::VERSION
-  spec.authors       = ["Nigel Brookes-Thomas"]
+  spec.authors       = ["Nigel Brookes-Thomas", "Thomas Feathers"]
   spec.email         = ["nigel.brookes-thomas@dvla.gov.uk"]
 
   spec.summary       = %q{Run Cucumber Tests in parallel and with Cucumber 3 and 4+}
