@@ -129,14 +129,15 @@ module ParallelReportPortal
         .then { |fn| fn ? File.read(fn) : '' }
         .then { |ys| YAML.safe_load(ys, symbolize_names: true) }
         .then do |yaml|
+        yaml ||= {}
         yaml.transform_keys! { |key| key.downcase }
         ATTRIBUTES.each do |attr|
-          yaml_key = if yaml&.has_key?("rp_#{attr}".to_sym)
+          yaml_key = if yaml.has_key?("rp_#{attr}".to_sym)
                        "rp_#{attr}".to_sym
                      else
                        attr
                      end
-          send(:"#{attr}=", yaml[yaml_key]) if yaml&.fetch(yaml_key, nil)
+          send(:"#{attr}=", yaml[yaml_key]) if yaml.fetch(yaml_key, nil)
         end
       end
     end
