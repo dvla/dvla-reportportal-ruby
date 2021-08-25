@@ -127,6 +127,52 @@ RSpec.describe ParallelReportPortal::Configuration do
       end
     end
 
+    it 'loads the ./report_portal.yml configuration file with rp_ in keys' do
+      expect(Dir).to receive(:[]).with('./config/*').and_return([])
+      expect(Dir).to receive(:[]).with('./*').and_return(['./report_portal.yml'])
+      expect(File).to receive(:read).with('./report_portal.yml').and_return(<<~CONFIG)
+        rp_uuid: 0a14044a-65fb-4981-b4b0-e699f99b4e59
+        rp_endpoint: https://url.local:10000/a/path
+        rp_project: rp_project
+        rp_launch: rp_launch_name
+        rp_description: a description
+        rp_attributes: [key:value, value]
+      CONFIG
+
+      config = ParallelReportPortal::Configuration.new
+
+      aggregate_failures 'values are set' do
+        expect(config.uuid).to eq('0a14044a-65fb-4981-b4b0-e699f99b4e59')
+        expect(config.endpoint).to eq('https://url.local:10000/a/path')
+        expect(config.project).to eq('rp_project')
+        expect(config.launch).to eq('rp_launch_name')
+        expect(config.description).to eq('a description')
+      end
+    end
+
+    it 'loads the ./report_portal.yml configuration file with RP_ in keys and all caps' do
+      expect(Dir).to receive(:[]).with('./config/*').and_return([])
+      expect(Dir).to receive(:[]).with('./*').and_return(['./report_portal.yml'])
+      expect(File).to receive(:read).with('./report_portal.yml').and_return(<<~CONFIG)
+        RP_UUID: 0a14044a-65fb-4981-b4b0-e699f99b4e59
+        RP_ENDPOINT: https://url.local:10000/a/path
+        RP_PROJECT: rp_project
+        RP_LAUNCH: rp_launch_name
+        RP_DESCRIPTION: a description
+        RP_ATTRIBUTES: [key:value, value]
+      CONFIG
+
+      config = ParallelReportPortal::Configuration.new
+
+      aggregate_failures 'values are set' do
+        expect(config.uuid).to eq('0a14044a-65fb-4981-b4b0-e699f99b4e59')
+        expect(config.endpoint).to eq('https://url.local:10000/a/path')
+        expect(config.project).to eq('rp_project')
+        expect(config.launch).to eq('rp_launch_name')
+        expect(config.description).to eq('a description')
+      end
+    end
+
     it 'prefers ./config/report_portal.yml over ./report_portal.yml' do
       expect(Dir).to receive(:[]).with('./config/*').and_return(['./config/report_portal.yml'])
       expect(Dir).to receive(:[]).with('./*').and_return(['./report_portal.yml'])
