@@ -30,7 +30,7 @@ The formatter supports configuration via a config file or via environment variab
 
 #### Configuration file
 
-It will search for a file called `report_portal.yml` or `REPORT_PORTAL.YML` in `./config` and `./`. It expects this file to contain the standard Report Portal configuration options -- see the Report Portal documentation.
+It will search for a file called `report_portal.yml` or `REPORT_PORTAL.YML` in `./config` and `./`. It expects this file to contain the standard Report Portal configuration options -- see the Report Portal documentation. Optionally, the config file keys may match those accepted through environment variables -- they may contain 'rp_' and 'RP_'.
 
 #### Environment variables
 

@@ -45,10 +45,10 @@ module ParallelReportPortal
     # @return [Array<String>] an array of attributes to attach to this launch
     #   (Report Portal 5)
     attr_reader :attributes
-  
+
 
     # Create an instance of Configuration.
-    # 
+    #
     # The initializer will first attempt to load a configuration files called
     # +report_portal.yml+ (case insensitive) in the both the +config+ and current
     # working directory (the former takes precidence). It will then apply
@@ -64,18 +64,18 @@ module ParallelReportPortal
     # Sets the tags for the launch. If an array is provided, the array is used,
     # if a string is provided, the string is broken into components by splitting
     # on a comma.
-    # 
+    #
     # e.g.
     #   configuration.tags="one,two, three"
     #   #=> ["one", "two", "three"]
-    # 
+    #
     # param [String | Array<String>] taglist a list of tags to set
     def tags=(taglist)
       if taglist.is_a?(String)
         @tags = taglist.split(',').map(&:strip)
       elsif taglist.is_a?(Array)
         @tags = taglist
-      else 
+      else
         @tags = []
       end
       tags
@@ -84,7 +84,7 @@ module ParallelReportPortal
 
     # Enables the debug flag which is sent to Report Portal. If this flag is set
     # Report Portal will include this launch in its 'debug' tab.
-    # 
+    #
     # param [Boolean | String] value if the value is a Boolean, it will take that value
     #   if it is a String, it will set values of 'true' to +true+, else all values will be false.
     def debug=(value)
@@ -98,18 +98,18 @@ module ParallelReportPortal
     # Sets the attributes for the launch. If an array is provided, the array is used,
     # if a string is provided, the string is broken into components by splitting
     # on a comma.
-    # 
+    #
     # e.g.
     #   configuration.tags="one,two, three"
     #   #=> ["one", "two", "three"]
-    # 
+    #
     # param [String | Array<String>] taglist a list of tags to set
     def attributes=(attrlist)
       if attrlist.is_a?(String)
         @attributes = attrlist.split(',').map(&:strip)
       elsif attrlist.is_a?(Array)
         @attributes = attrlist
-      else 
+      else
         @attributes = []
       end
       attributes
@@ -129,10 +129,18 @@ module ParallelReportPortal
         .then { |fn| fn ? File.read(fn) : '' }
         .then { |ys| YAML.safe_load(ys, symbolize_names: true) }
         .then do |yaml|
+        if yaml
+          yaml.transform_keys! { |key| key.downcase }
           ATTRIBUTES.each do |attr|
-            send(:"#{attr}=", yaml[attr]) if yaml&.fetch(attr, nil)
+            yaml_key = if yaml.has_key?("rp_#{attr}".to_sym)
+                         "rp_#{attr}".to_sym
+                       else
+                         attr
+                       end
+            send(:"#{attr}=", yaml[yaml_key]) if yaml.fetch(yaml_key, nil)
           end
         end
+      end
     end
   end
 end
