@@ -2,7 +2,7 @@
 
 This gem is a Ruby-Cucumber formatter which sends the test output to [Report Portal](https://reportportal.io).
 
-This formatter supports plain 'ol Cucumber tests and those wrapped with [parallel_tests](https://rubygems.org/gems/parallel_tests). 
+This formatter supports plain 'ol Cucumber tests and those wrapped with [parallel_tests](https://rubygems.org/gems/parallel_tests).
 
 It also supports Cucumber 3.x and 4+ (Cucumber implementations using cucumber-messages).
 
@@ -30,20 +30,30 @@ The formatter supports configuration via a config file or via environment variab
 
 #### Configuration file
 
-It will search for a file called `report_portal.yml` or `REPORT_PORTAL.YML` in `./config` and `./`. It expects this file to contain the standard Report Portal configuration options -- see the Report Portal documentation. Optionally, the config file keys may match those accepted through environment variables -- they may contain 'rp_' and 'RP_'.
+It will search for a file called `report_portal.yml` or `REPORT_PORTAL.YML` in `./config` and `./`. It expects this file to contain the standard Report Portal configuration options -- see the Report Portal documentation. Optionally, the config file keys may match those accepted through environment variables -- they may contain 'rp*' and 'RP*'.
+
+#### Configurable Timeouts
+
+When running in parallel you might encounter some connection timeouts and these have been made configurable. You can configure the Report Portal yaml file with these attributes and set your own custom timeout values.
+
+```yaml
+idle_timeout: 100
+open_timeout: 60
+read_timeout: 60
+```
 
 #### Environment variables
 
 It will search for the following environment variables which may be in upper or lowercase (the official client defers to lower case, this is available here for compatibility).
 
-* `RP_UUID` - the user's UUID for this Report Portal instance which must be created in advance
-* `RP_ENDPOINT` - the endpoint for this Report Portal instance 
-* `RP_PROJECT` - the Report Portal project name which must be created in advance and this user added as a member 
-* `RP_LAUNCH` - the name of this 'launch'  
-* `RP_DEBUG` - *optional* if set to the string value `true` it will instruct Report Portal to add the output of these tests to the debug tab 
-* `RP_DESCRIPTION` - *optional* a textual description of the launch 
-* `RP_TAGS` - *optional* a string of comma separated tags 
-* `RP_ATTRIBUTES` - *optional* a string of comma separated attributes 
+- `RP_UUID` - the user's UUID for this Report Portal instance which must be created in advance
+- `RP_ENDPOINT` - the endpoint for this Report Portal instance
+- `RP_PROJECT` - the Report Portal project name which must be created in advance and this user added as a member
+- `RP_LAUNCH` - the name of this 'launch'
+- `RP_DEBUG` - _optional_ if set to the string value `true` it will instruct Report Portal to add the output of these tests to the debug tab
+- `RP_DESCRIPTION` - _optional_ a textual description of the launch
+- `RP_TAGS` - _optional_ a string of comma separated tags
+- `RP_ATTRIBUTES` - _optional_ a string of comma separated attributes
 
 ### With cucumber
 
@@ -61,9 +71,7 @@ cucumber -f ParallelReportPortal::Cucumber::Formatter --out /dev/null -f progres
 
 ```
 parallel_cucumber -- -f ParallelReportPortal::Cucumber::Formatter -- features/
- ```
-
-
+```
 
 ## Development
 
