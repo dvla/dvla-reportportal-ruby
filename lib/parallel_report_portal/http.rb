@@ -39,7 +39,9 @@ module ParallelReportPortal
         }
       ) do |f|
         f.adapter :net_http_persistent, pool_size: 5 do |http|
-          http.idle_timeout = 100
+          http.idle_timeout = ParallelReportPortal.configuration.fetch(:idle_timeout, 100)
+          http.open_timeout = ParallelReportPortal.configuration.fetch(:open_timeout, 60)
+          http.read_timeout = ParallelReportPortal.configuration.fetch(:read_timeout, 60)
         end
       end
     end
@@ -60,7 +62,9 @@ module ParallelReportPortal
         conn.request :url_encoded
         conn.adapter :net_http_persistent, pool_size: 5 do |http|
           # yields Net::HTTP::Persistent
-          http.idle_timeout = 100
+          http.idle_timeout = ParallelReportPortal.configuration.fetch(:idle_timeout, 100)
+          http.open_timeout = ParallelReportPortal.configuration.fetch(:open_timeout, 60)
+          http.read_timeout = ParallelReportPortal.configuration.fetch(:read_timeout, 60)
         end
       end
     end
