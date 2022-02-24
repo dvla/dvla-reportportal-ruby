@@ -22,7 +22,7 @@ module ParallelReportPortal
   # RP_TAGS:: A set of tags to pass to Report Portal for this launch. If these are set via an environment variable, provide a comma-separated string of tags
   # RP_ATTRIBUTES:: A set of attribute tags to pass to Report Portal for this launch. If these are set via an environment variable, provide a comma-separated string of attributes
   class Configuration
-    ATTRIBUTES = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes]
+    ATTRIBUTES = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout]
 
     # @return [String] the Report Portal user UUID
     attr_accessor :uuid
@@ -45,6 +45,12 @@ module ParallelReportPortal
     # @return [Array<String>] an array of attributes to attach to this launch
     #   (Report Portal 5)
     attr_reader :attributes
+    # @return [Integer] the number of seconds for the open connection to timeout
+    attr_accessor :open_timeout
+    # @return [Integer] the number of seconds for the open and idle connection to timeout
+    attr_accessor :idle_timeout
+    # @return [Integer] the number of seconds for the read connection to timeout
+    attr_accessor :read_timeout
 
 
     # Create an instance of Configuration.
@@ -93,6 +99,12 @@ module ParallelReportPortal
                else
                  value.to_s.downcase.strip == 'true'
                end
+    end
+
+    # Simple method to obtain an attribute from this class or set default value
+    # param [symbol] a symbol version of the attribute
+    def fetch(key, default_value)
+      self.send(key).nil? ? default_value : self.send(key)
     end
 
     # Sets the attributes for the launch. If an array is provided, the array is used,

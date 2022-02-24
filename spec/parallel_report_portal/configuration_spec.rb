@@ -4,7 +4,7 @@ RSpec.describe ParallelReportPortal::Configuration do
     let(:configurable_attributes) { ParallelReportPortal::Configuration::ATTRIBUTES }
 
     it 'reflects over the settable attributes' do
-      expected_attrs = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes]
+      expected_attrs = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout]
       expect(configurable_attributes).to contain_exactly(*expected_attrs)
     end
   end
@@ -45,6 +45,15 @@ RSpec.describe ParallelReportPortal::Configuration do
       description = 'this is a launch description'
       config.description = description
       expect(config.description).to eq(description)
+    end
+
+    it 'allows configuration of timeouts' do
+      config.idle_timeout = 23
+      config.open_timeout = 23
+      config.read_timeout = 23
+      expect(config.idle_timeout).to eq(23)
+      expect(config.open_timeout).to eq(23)
+      expect(config.read_timeout).to eq(23)
     end
 
     context 'handles array-like strings and arrays' do
