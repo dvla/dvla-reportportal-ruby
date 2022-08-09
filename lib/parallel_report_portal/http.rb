@@ -2,7 +2,7 @@ require 'logger'
 require 'tempfile'
 
 module ParallelReportPortal
-  # A collection of methods for communicating with the ReportPortal 
+  # A collection of methods for communicating with the ReportPortal
   # REST interface.
   module HTTP
 
@@ -10,16 +10,16 @@ module ParallelReportPortal
     @@logger = Logger.new(STDOUT)
     @@logger.level = Logger::ERROR
 
-    # Construct the Report Portal project URL (as a string) based 
+    # Construct the Report Portal project URL (as a string) based
     # on the config settings.
-    # 
+    #
     # @return [String] URL the report portal base URL
     def url
       "#{ParallelReportPortal.configuration.endpoint}/#{ParallelReportPortal.configuration.project}"
     end
 
     # Helper method for constructing the +Bearer+ header
-    # 
+    #
     # @return [String] header the bearer header value
     def authorization_header
       "Bearer #{ParallelReportPortal.configuration.uuid}"
@@ -28,7 +28,7 @@ module ParallelReportPortal
     # Get a preconstructed Faraday HTTP connection
     # which has the endpont and headers ready populated.
     # This object is memoized.
-    # 
+    #
     # @return [Faraday::Connection] connection the HTTP connection object
     def http_connection
       @http_connection ||= Faraday.new(
@@ -49,7 +49,7 @@ module ParallelReportPortal
     # Get a preconstructed Faraday HTTP multipart connection
     # which has the endpont and headers ready populated.
     # This object is memoized.
-    # 
+    #
     # @return [Faraday::Connection] connection the HTTP connection object
     def http_multipart_connection
       @http_multipart_connection ||= Faraday.new(
@@ -74,10 +74,10 @@ module ParallelReportPortal
     def req_launch_started(time)
       resp = http_connection.post('launch') do |req|
               req.body = {
-                name: ParallelReportPortal.configuration.launch, 
-                start_time: time, 
-                tags: ParallelReportPortal.configuration.tags, 
-                description: ParallelReportPortal.configuration.description, 
+                name: ParallelReportPortal.configuration.launch,
+                start_time: time,
+                tags: ParallelReportPortal.configuration.tags,
+                description: ParallelReportPortal.configuration.description,
                 mode: (ParallelReportPortal.configuration.debug ? 'DEBUG' : 'DEFAULT' ),
                 attributes: ParallelReportPortal.configuration.attributes
               }.to_json
@@ -88,7 +88,7 @@ module ParallelReportPortal
         @@logger.error("Launch failed with response code #{resp.status} -- message #{resp.body}")
       end
     end
-    
+
     # Send a request to Report Portal to finish a launch.
     # It will bubble up any Faraday connection exceptions.
     def req_launch_finished(launch_id, time)
@@ -96,10 +96,10 @@ module ParallelReportPortal
         req.body = { end_time: time }.to_json
       end
     end
-    
+
     # Send a request to ReportPortal to start a feature.
     # It will bubble up any Faraday connection exceptions.
-    # 
+    #
     # @return [String] id the UUID of the feature
     def req_feature_started(launch_id, parent_id, feature, time)
         description = if feature.description
@@ -116,9 +116,9 @@ module ParallelReportPortal
                       description,
                       time )
     end
-    
+
     # Sends a request to Report Portal to add an item into its hierarchy.
-    # 
+    #
     # @return [String] uuid the UUID of the newly created child
     def req_hierarchy(launch_id, name, parent, type, tags, description, time )
       resource = 'item'
@@ -134,23 +134,23 @@ module ParallelReportPortal
           attributes: tags
         }.to_json
       end
-      
+
       if resp.success?
         JSON.parse(resp.body)['id']
       else
         @@logger.warn("Starting a heirarchy failed with response code #{resp.status} -- message #{resp.body}")
       end
     end
-  
+
     # Send a request to Report Portal that a feature has completed.
     def req_feature_finished(feature_id, time)
       ParallelReportPortal.http_connection.put("item/#{feature_id}") do |req|
         req.body = { end_time: time }.to_json
       end
     end
-  
+
     # Send a request to ReportPortal to start a test case.
-    # 
+    #
     # @return [String] uuid the UUID of the test case
     def req_test_case_started(launch_id, feature_id, test_case, time)
       resp = ParallelReportPortal.http_connection.post("item/#{feature_id}") do |req|
@@ -176,7 +176,7 @@ module ParallelReportPortal
         @@logger.warn("Starting a test case failed with response code #{resp.status} -- message #{resp.body}")
       end
     end
-    
+
     # Request that the test case be finished
     def req_test_case_finished(test_case_id, status, time)
       resp = ParallelReportPortal.http_connection.put("item/#{test_case_id}") do |req|
@@ -186,8 +186,8 @@ module ParallelReportPortal
         }.to_json
       end
     end
-    
-    
+
+
     # Request that Report Portal records a log record
     def req_log(test_case_id, detail, level, time)
       resp = ParallelReportPortal.http_connection.post('log') do |req|
@@ -202,19 +202,26 @@ module ParallelReportPortal
 
 
     # Request that Report Portal attach a file to the test case.
-    # 
+    #
     # @param status [String] the status level of the log, e.g. info, warn
     # @param path [String] the fully qualified path of the file to attach
     # @param label [String] a label to add to the attachment, defaults to the filename
     # @param time [Integer] the time in milliseconds for the attachment
     # @param mime_type [String] the mimetype of the attachment
-    def send_file(status, path, label = nil, time = ParallelReportPortal.clock, mime_type = 'image/png')
+    def send_file(
+      status,
+      path,
+      label = nil,
+      time = ParallelReportPortal.clock,
+      mime_type = 'image/png',
+      scenario_id = nil
+    )
       File.open(File.realpath(path), 'rb') do |file|
         label ||= File.basename(file)
 
-        # where did @test_case_id come from? ok, I know where it came from but this 
+        # where did @test_case_id come from? ok, I know where it came from but this
         # really should be factored out of here and state handled better
-        json = { level: status, message: label, item_id: @test_case_id, time: time, file: { name: File.basename(file) } }
+        json = { level: status, message: label, item_id: scenario_id || @test_case_id, time: time, file: { name: File.basename(file) } }
 
         json_file = Tempfile.new
         json_file << [json].to_json
