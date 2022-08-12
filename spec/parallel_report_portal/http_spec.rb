@@ -1,3 +1,9 @@
+def expect_log_endpoint_called_with_body_part(expected_body_part)
+  expect(WebMock).to have_requested(:post, "#{rp_endpoint}/log").
+    with { |req| req.body.include? expected_body_part }.
+    once
+end
+
 RSpec.describe ParallelReportPortal::HTTP do
 
   let(:rp) do
@@ -89,20 +95,20 @@ RSpec.describe ParallelReportPortal::HTTP do
     it 'issues a launch finished request' do
       stub_request(:put, "#{rp_endpoint}/launch/#{launch_id}/finish")
         .to_return(body: {id: launch_id}.to_json )
-      
+
       rp.req_launch_finished(launch_id, 0)
       expect(WebMock).to have_requested(:put, "#{rp_endpoint}/launch/#{launch_id}/finish")
         .with( body: {end_time: 0} )
     end
 
-    it 'calls the item heirachy method when starting a feature' do
+    it 'calls the item hierarchy method when starting a feature' do
       time = Time.now
       feature = OpenStruct.new(
-        description: 'feature description', file: 'file.feature', 
+        description: 'feature description', file: 'file.feature',
         keyword: 'Feature', name: 'a feature', tags: [])
       expect(rp).to receive(:req_hierarchy)
         .with(
-          launch_id, "#{feature.keyword}: #{feature.name}", parent_id, 
+          launch_id, "#{feature.keyword}: #{feature.name}", parent_id,
           'TEST', [], feature.description, time)
       rp.req_feature_started(launch_id, parent_id, feature, time)
     end
@@ -110,7 +116,7 @@ RSpec.describe ParallelReportPortal::HTTP do
     it 'issues a request to add a child to the hierarchy' do
       stub_request(:post, "#{rp_endpoint}/item/#{parent_id}")
         .to_return(body: {id: item_id}.to_json )
-      
+
       time = 0
       id = rp.req_hierarchy(launch_id, 'child', parent_id, 'TEST', [], 'desc', time )
 
@@ -130,7 +136,7 @@ RSpec.describe ParallelReportPortal::HTTP do
 
     it 'issues a feature finished request' do
       stub_request(:put, "#{rp_endpoint}/item/#{item_id}")
-      
+
       rp.req_feature_finished(item_id, 0)
       expect(WebMock).to have_requested(:put, "#{rp_endpoint}/item/#{item_id}")
         .with( body: {end_time: 0} )
@@ -152,7 +158,7 @@ RSpec.describe ParallelReportPortal::HTTP do
           name: "#{test_case.keyword}: #{test_case.name}",
           type: 'STEP',
           launch_id: launch_id,
-          description: test_case.location.to_s, 
+          description: test_case.location.to_s,
           attributes: test_case.tags.map(&:name)
         })
     end
@@ -160,7 +166,7 @@ RSpec.describe ParallelReportPortal::HTTP do
 
     it 'issues a test case finished request' do
       stub_request(:put, "#{rp_endpoint}/item/#{item_id}")
-      
+
       rp.req_test_case_finished(item_id, 'PASS', 0)
       expect(WebMock).to have_requested(:put, "#{rp_endpoint}/item/#{item_id}")
         .with( body: {end_time: 0, status: 'PASS'} )
@@ -180,14 +186,30 @@ RSpec.describe ParallelReportPortal::HTTP do
         } )
     end
 
-    # this is a poor test but I can't find a way to test the 
-    # multipart upload. There's no test of the request body
-    # which is non-trivial which makes me sad :(
     it 'issues a log request with an attachment' do
       stub_request(:post, "#{rp_endpoint}/log")
-      t = Tempfile.new
-      rp.send_file('info', t.path, 'a label', nil, mime_type = 'image/png')
-      expect(WebMock).to have_requested(:post, "#{rp_endpoint}/log")
+      temp_file = Tempfile.new
+
+      rp.send_file('info', temp_file.path, 'a label', nil, 'image/png')
+
+      expect_log_endpoint_called_with_body_part('"level":"info"')
+      expect_log_endpoint_called_with_body_part('"message":"a label"')
+      expect_log_endpoint_called_with_body_part('"item_id":null')
+      expect_log_endpoint_called_with_body_part('"time":null')
+      expect_log_endpoint_called_with_body_part("\"file\":{\"name\":\"#{File.basename(temp_file.path)}\"}")
+    end
+
+    it 'issues a log request with an attachment and specific scenario_id' do
+      stub_request(:post, "#{rp_endpoint}/log")
+      temp_file = Tempfile.new
+
+      rp.send_file('info', temp_file.path, 'a label', nil, 'image/png', 'cfbf75de-dafe-4a4e-a681-c5cb5026cb93')
+
+      expect_log_endpoint_called_with_body_part('"level":"info"')
+      expect_log_endpoint_called_with_body_part('"message":"a label"')
+      expect_log_endpoint_called_with_body_part('"item_id":"cfbf75de-dafe-4a4e-a681-c5cb5026cb93"')
+      expect_log_endpoint_called_with_body_part('"time":null')
+      expect_log_endpoint_called_with_body_part("\"file\":{\"name\":\"#{File.basename(temp_file.path)}\"}")
     end
   end
 
