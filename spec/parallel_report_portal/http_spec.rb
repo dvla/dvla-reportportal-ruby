@@ -179,7 +179,7 @@ RSpec.describe ParallelReportPortal::HTTP do
       rp.req_log(item_id, 'a message', 'info', time)
       expect(WebMock).to have_requested(:post, "#{rp_endpoint}/log")
         .with( body: {
-          item_id: item_id,
+          itemUuid: item_id,
           message: 'a message',
           level: 'info',
           time: time
@@ -194,7 +194,7 @@ RSpec.describe ParallelReportPortal::HTTP do
 
       expect_log_endpoint_called_with_body_part('"level":"info"')
       expect_log_endpoint_called_with_body_part('"message":"a label"')
-      expect_log_endpoint_called_with_body_part('"item_id":null')
+      expect_log_endpoint_called_with_body_part('"itemUuid":null')
       expect_log_endpoint_called_with_body_part('"time":null')
       expect_log_endpoint_called_with_body_part("\"file\":{\"name\":\"#{File.basename(temp_file.path)}\"}")
     end
@@ -207,7 +207,7 @@ RSpec.describe ParallelReportPortal::HTTP do
 
       expect_log_endpoint_called_with_body_part('"level":"info"')
       expect_log_endpoint_called_with_body_part('"message":"a label"')
-      expect_log_endpoint_called_with_body_part('"item_id":"cfbf75de-dafe-4a4e-a681-c5cb5026cb93"')
+      expect_log_endpoint_called_with_body_part('"itemUuid":"cfbf75de-dafe-4a4e-a681-c5cb5026cb93"')
       expect_log_endpoint_called_with_body_part('"time":null')
       expect_log_endpoint_called_with_body_part("\"file\":{\"name\":\"#{File.basename(temp_file.path)}\"}")
     end

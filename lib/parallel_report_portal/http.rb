@@ -192,7 +192,7 @@ module ParallelReportPortal
     def req_log(test_case_id, detail, level, time)
       resp = ParallelReportPortal.http_connection.post('log') do |req|
         req.body = {
-          item_id: test_case_id,
+          itemUuid: test_case_id,
           message: detail,
           level: level,
           time: time,
@@ -221,7 +221,15 @@ module ParallelReportPortal
 
         # where did @test_case_id come from? ok, I know where it came from but this
         # really should be factored out of here and state handled better
-        json = { level: status, message: label, item_id: scenario_id || @test_case_id, time: time, file: { name: File.basename(file) } }
+        json = {
+          level: status,
+          message: label,
+          itemUuid: scenario_id || @test_case_id,
+          time: time,
+          file: {
+            name: File.basename(file)
+          }
+        }
 
         json_file = Tempfile.new
         json_file << [json].to_json
