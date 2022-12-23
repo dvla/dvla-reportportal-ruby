@@ -61,7 +61,7 @@ module ParallelReportPortal
         end
         response = ParallelReportPortal.req_launch_finished(launch_id, clock)
         link = get_report_link(response)
-        if ParallelReportPortal.configuration.log_launch_link
+        if ParallelReportPortal.configuration.log_launch_link && link
           print "Launch in ReportPortal: #{link}"
         end
       end
