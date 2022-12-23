@@ -57,13 +57,11 @@ module ParallelReportPortal
       def launch_finished(clock)
         @tree.postordered_each do |node|
           response = ParallelReportPortal.req_feature_finished(node.content, clock) unless node.is_root?
-          link = get_report_link(response)
+          parse_report_link_from_response(response)
         end
         response = ParallelReportPortal.req_launch_finished(launch_id, clock)
-        link = get_report_link(response)
-        if ParallelReportPortal.configuration.log_launch_link && link
-          print "Launch in ReportPortal: #{link}"
-        end
+        parse_report_link_from_response(response)
+        ParallelReportPortal.launch_finished_block.call if ParallelReportPortal.launch_finished_block
       end
 
       # Called to indicate that a feature has started.
@@ -229,12 +227,11 @@ module ParallelReportPortal
         end
       end
 
-      def get_report_link(response)
+      def parse_report_link_from_response(response)
         if response
           json = JSON.parse(response.body)
-          link = json['link'] if json['link']
+          ParallelReportPortal.report_url = json['link'] if json['link']
         end
-        link
       end
     end
   end

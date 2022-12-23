@@ -23,7 +23,7 @@ module ParallelReportPortal
   # RP_ATTRIBUTES:: A set of attribute tags to pass to Report Portal for this launch. If these are set via an environment variable, provide a comma-separated string of attributes
   # RP_LOG_LAUNCH_LINK:: Whether to log the Report Portal link at the end of the launch
   class Configuration
-    ATTRIBUTES = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout, :log_launch_link]
+    ATTRIBUTES = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout]
 
     # @return [String] the Report Portal user UUID
     attr_accessor :uuid
@@ -52,8 +52,6 @@ module ParallelReportPortal
     attr_accessor :idle_timeout
     # @return [Integer] the number of seconds for the read connection to timeout
     attr_accessor :read_timeout
-    # @return [Boolean] true to print out a link to this launch.
-    attr_accessor :log_launch_link
 
     # Create an instance of Configuration.
     #
@@ -103,18 +101,6 @@ module ParallelReportPortal
                end
     end
 
-
-    # Enables the log_launch_link flag
-    #
-    # param [Boolean | String] value if the value is a Boolean, it will take that value
-    #   if it is a String, it will set values of 'true' to +true+, else all values will be false.
-    def log_launch_link=(value)
-      @log_launch_link = if [true, false].include?(value)
-                           value
-                         else
-                           value.to_s.downcase.strip == 'true'
-                         end
-    end
 
     # Simple method to obtain an attribute from this class or set default value
     # param [symbol] a symbol version of the attribute
