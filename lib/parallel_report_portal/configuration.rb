@@ -1,28 +1,29 @@
 module ParallelReportPortal
   # The Configuration class holds the connection properties to communicate with
   # Report Portal and to identify the user and project for reporting.
-  # 
+  #
   # It attempts to load a configuration file called +report_portal.yml+ first in a
   # local directory called +config+ and if that's not found in the current directory.
   # (Report Portal actually tells you to create a files called +REPORT_PORTAL.YML+ in
-  # uppercase -- for this reason the initializer is case insensitive with regards to 
+  # uppercase -- for this reason the initializer is case insensitive with regards to
   # the file name)
-  # 
+  #
   # It will then try an apply the following environment variables, if present (these
   # can be specified in either lowercase for backwards compatibility with the official
   # gem or in uppercase for reasons of sanity)
-  # 
+  #
   # == Environment variables
-  # 
+  #
   # RP_UUID:: The UUID of the user associated with this launch
   # RP_ENDPOINT:: the URL of the Report Portal API endpoint
   # RP_PROJECT:: the Report Portal project name -- this must already exist within Report Port and this user must be a member of the project
-  # RP_LAUNCH:: The name of this launch 
+  # RP_LAUNCH:: The name of this launch
   # RP_DESCRIPTION:: A textual string describing this launch
   # RP_TAGS:: A set of tags to pass to Report Portal for this launch. If these are set via an environment variable, provide a comma-separated string of tags
   # RP_ATTRIBUTES:: A set of attribute tags to pass to Report Portal for this launch. If these are set via an environment variable, provide a comma-separated string of attributes
+  # RP_LOG_LAUNCH_LINK:: Whether to log the Report Portal link at the end of the launch
   class Configuration
-    ATTRIBUTES = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout]
+    ATTRIBUTES = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout, :log_launch_link]
 
     # @return [String] the Report Portal user UUID
     attr_accessor :uuid
@@ -51,7 +52,8 @@ module ParallelReportPortal
     attr_accessor :idle_timeout
     # @return [Integer] the number of seconds for the read connection to timeout
     attr_accessor :read_timeout
-
+    # @return [Boolean] true to print out a link to this launch.
+    attr_accessor :log_launch_link
 
     # Create an instance of Configuration.
     #

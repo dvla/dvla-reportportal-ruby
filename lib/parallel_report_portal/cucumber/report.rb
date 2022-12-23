@@ -4,39 +4,39 @@ require 'tree'
 module ParallelReportPortal
   module Cucumber
     # Report object. This handles the management of the state hierarchy and
-    # the issuing of the requests to the HTTP module. 
+    # the issuing of the requests to the HTTP module.
     class Report
-      
+
       attr_reader :launch_id
-      
+
       Feature = Struct.new(:feature, :id)
-      
-      LOG_LEVELS = { 
-        error: 'ERROR', 
-        warn: 'WARN', 
-        info: 'INFO', 
-        debug: 'DEBUG', 
-        trace: 'TRACE', 
-        fatal: 'FATAL', 
-        unknown: 'UNKNOWN' 
+
+      LOG_LEVELS = {
+        error: 'ERROR',
+        warn: 'WARN',
+        info: 'INFO',
+        debug: 'DEBUG',
+        trace: 'TRACE',
+        fatal: 'FATAL',
+        unknown: 'UNKNOWN'
       }
 
-      
+
       # Create a new instance of the report
       def initialize(ast_lookup = nil)
         @feature = nil
-        @tree = Tree::TreeNode.new( 'root' ) 
+        @tree = Tree::TreeNode.new( 'root' )
         @ast_lookup = ast_lookup
       end
-      
+
       # Issued to start a launch. It is possilbe that this method could be called
       # from multiple processes for the same launch if this is being run with
       # parallel tests enabled. A temporary launch file will be created (using
       # exclusive locking). The first time this method is called it will write the
       # launch id to the launch file, subsequent calls by other processes will read
       # this launch id and use that.
-      # 
-      # @param start_time [Integer] the millis from the epoch 
+      #
+      # @param start_time [Integer] the millis from the epoch
       # @return [String] the UUID of this launch
       def launch_started(start_time)
         ParallelReportPortal.file_open_exlock_and_block(ParallelReportPortal.launch_id_file, 'a+' ) do |file|
@@ -50,39 +50,44 @@ module ParallelReportPortal
           @launch_id
         end
       end
-      
+
       # Called to finish a launch. Any open children items will be closed in the process.
-      # 
+      #
       # @param clock [Integer] the millis from the epoch
       def launch_finished(clock)
         @tree.postordered_each do |node|
-          ParallelReportPortal.req_feature_finished(node.content, clock) unless node.is_root?
+          response = ParallelReportPortal.req_feature_finished(node.content, clock) unless node.is_root?
+          link = get_report_link(response)
         end
-        ParallelReportPortal.req_launch_finished(launch_id, clock)
+        response = ParallelReportPortal.req_launch_finished(launch_id, clock)
+        link = get_report_link(response)
+        if ParallelReportPortal.configuration.log_launch_link
+          print "Launch in ReportPortal: #{link}"
+        end
       end
-      
+
       # Called to indicate that a feature has started.
-      # 
-      # @param 
+      #
+      # @param
       def feature_started(feature, clock)
         parent_id = hierarchy(feature, clock)
         feature = feature.feature if using_cucumber_messages?
         ParallelReportPortal.req_feature_started(launch_id, parent_id, feature, clock)
       end
-      
+
       def feature_finished(clock)
         if @feature
           resp = ParallelReportPortal.req_feature_finished(@feature.id, clock)
         end
       end
-            
+
       def test_case_started(event, clock)
         test_case = lookup_test_case(event.test_case)
         feature = lookup_feature(event.test_case)
         feature = current_feature(feature, clock)
         @test_case_id = ParallelReportPortal.req_test_case_started(launch_id, feature.id, test_case, clock)
       end
-      
+
       def test_case_finished(event, clock)
         result = event.result
         status = result.to_sym
@@ -93,7 +98,7 @@ module ParallelReportPortal
         end
         resp = ParallelReportPortal.req_test_case_finished(@test_case_id, status, clock)
       end
-      
+
       def test_step_started(event, clock)
         test_step = event.test_step
         if !hook?(test_step)
@@ -104,11 +109,11 @@ module ParallelReportPortal
           elsif (using_cucumber_messages? ? test_step : step_source).multiline_arg.data_table?
             detail << (using_cucumber_messages? ? test_step : step_source).multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
           end
-          
+
           ParallelReportPortal.req_log(@test_case_id, detail, status_to_level(:trace), clock)
         end
       end
-      
+
       def test_step_finished(event, clock)
         test_step = event.test_step
         result = event.result
@@ -129,13 +134,13 @@ module ParallelReportPortal
         ParallelReportPortal.req_log(@test_case_id, detail, status_to_level(status), clock) if detail
 
       end
-    
+
       private
 
       def using_cucumber_messages?
         @ast_lookup != nil
       end
-      
+
       def hierarchy(feature, clock)
         node = nil
         path_components = if using_cucumber_messages?
@@ -144,7 +149,7 @@ module ParallelReportPortal
                             feature.location.file.split(File::SEPARATOR)
                           end
         ParallelReportPortal.file_open_exlock_and_block(ParallelReportPortal.hierarchy_file, 'a+b' ) do |file|
-          @tree = Marshal.load(File.read(file)) if file.size > 0 
+          @tree = Marshal.load(File.read(file)) if file.size > 0
           node = @tree.root
           path_components[0..-2].each do |component|
             next_node = node[component]
@@ -161,7 +166,7 @@ module ParallelReportPortal
           file.write(Marshal.dump(@tree))
           file.flush
         end
-        
+
         node.content
       end
 
@@ -193,7 +198,7 @@ module ParallelReportPortal
           step.source.last
         end
       end
-      
+
       def current_feature(feature, clock)
         if @feature&.feature == feature
           @feature
@@ -202,7 +207,7 @@ module ParallelReportPortal
           @feature = Feature.new(feature, feature_started(feature, clock))
         end
       end
-      
+
       def hook?(test_step)
         if using_cucumber_messages?
           test_step.hook?
@@ -210,7 +215,7 @@ module ParallelReportPortal
           ! test_step.source.last.respond_to?(:keyword)
         end
       end
-      
+
       def status_to_level(status)
         case status
         when :passed
@@ -223,8 +228,14 @@ module ParallelReportPortal
           LOG_LEVELS.fetch(status, LOG_LEVELS[:info])
         end
       end
-      
-    
+
+      def get_report_link(response)
+        if response
+          json = JSON.parse(response.body)
+          link = json['link'] if json['link']
+        end
+        link
+      end
     end
   end
 end
