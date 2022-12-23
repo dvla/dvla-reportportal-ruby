@@ -103,6 +103,19 @@ module ParallelReportPortal
                end
     end
 
+
+    # Enables the log_launch_link flag
+    #
+    # param [Boolean | String] value if the value is a Boolean, it will take that value
+    #   if it is a String, it will set values of 'true' to +true+, else all values will be false.
+    def log_launch_link=(value)
+      @log_launch_link = if [true, false].include?(value)
+                           value
+                         else
+                           value.to_s.downcase.strip == 'true'
+                         end
+    end
+
     # Simple method to obtain an attribute from this class or set default value
     # param [symbol] a symbol version of the attribute
     def fetch(key, default_value)
