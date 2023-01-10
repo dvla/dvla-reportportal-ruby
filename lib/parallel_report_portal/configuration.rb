@@ -21,7 +21,6 @@ module ParallelReportPortal
   # RP_DESCRIPTION:: A textual string describing this launch
   # RP_TAGS:: A set of tags to pass to Report Portal for this launch. If these are set via an environment variable, provide a comma-separated string of tags
   # RP_ATTRIBUTES:: A set of attribute tags to pass to Report Portal for this launch. If these are set via an environment variable, provide a comma-separated string of attributes
-  # RP_LOG_LAUNCH_LINK:: Whether to log the Report Portal link at the end of the launch
   class Configuration
     ATTRIBUTES = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout]
 
