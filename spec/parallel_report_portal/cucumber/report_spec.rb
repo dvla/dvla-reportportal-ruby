@@ -45,6 +45,16 @@ RSpec.describe ParallelReportPortal::Cucumber::Report do
       report.launch_finished(0)
     end
 
+    it 'issues executes a post launch hook' do
+      report.instance_variable_set(:@launch_id, uuid)
+      expect(ParallelReportPortal).to receive(:req_launch_finished)
+
+      called = false
+      ParallelReportPortal.after_launch { called = true }
+      report.launch_finished(0)
+      expect(called).to eq true
+    end
+
     it 'terminates any existing child items before terminating the launch' do
       tree = Tree::TreeNode.new( 'root' )
       tree << Tree::TreeNode.new('child', 'child_node_uuid')

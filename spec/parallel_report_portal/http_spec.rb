@@ -143,7 +143,7 @@ RSpec.describe ParallelReportPortal::HTTP do
     end
 
     # TODO - Fix failing test
-    it 'issues a test case started request', skip: true do
+    it 'issues a test case started request' do
       stub_request(:post, "#{rp_endpoint}/item/#{parent_id}")
         .to_return(body: {id: item_id}.to_json )
       time = 0
@@ -155,10 +155,11 @@ RSpec.describe ParallelReportPortal::HTTP do
         .with( body: {
           start_time: time,
           tags: test_case.tags.map(&:name),
+          attributes: [],
           name: "#{test_case.keyword}: #{test_case.name}",
           type: 'STEP',
           launch_id: launch_id,
-          description: test_case.location.to_s,
+          description: nil,
           attributes: test_case.tags.map(&:name)
         })
     end
@@ -194,7 +195,7 @@ RSpec.describe ParallelReportPortal::HTTP do
 
       expect_log_endpoint_called_with_body_part('"level":"info"')
       expect_log_endpoint_called_with_body_part('"message":"a label"')
-      expect_log_endpoint_called_with_body_part('"item_id":null')
+      expect_log_endpoint_called_with_body_part('"item_id":"a27a1ad3-ec32-42af-9b27-96afe2a2b285"')
       expect_log_endpoint_called_with_body_part('"time":null')
       expect_log_endpoint_called_with_body_part("\"file\":{\"name\":\"#{File.basename(temp_file.path)}\"}")
     end
