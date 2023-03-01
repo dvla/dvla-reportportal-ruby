@@ -7,6 +7,8 @@
 /pkg/
 /spec/reports/
 /tmp/
+/out/
+/vendor/
 
 # Appraisal lock files
 /gemfiles/*.lock
@@ -15,5 +17,6 @@ Gemfile.lock
 # rspec failure tracking
 .rspec_status
 .DS_Store
+.ruby-version
 
 *.gem
