@@ -38,7 +38,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "webmock", "~> 3.12"
   
   spec.add_runtime_dependency 'cucumber', '>= 3.2'
-  spec.add_runtime_dependency 'faraday', '~> 1.0'
+  spec.add_runtime_dependency 'faraday-net_http_persistent', '~> 2.1'
+  spec.add_runtime_dependency 'faraday-multipart', '~> 1.0', '>= 1.0.4'
   spec.add_runtime_dependency 'parallel_tests', '>= 2.29.1'
   spec.add_runtime_dependency 'rubytree', '~> 1.0'
   spec.add_runtime_dependency 'net-http-persistent', '~> 4.0'

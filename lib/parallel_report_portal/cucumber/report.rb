@@ -1,4 +1,6 @@
 require 'faraday'
+require 'faraday/net_http_persistent'
+require 'faraday/multipart'
 require 'tree'
 
 module ParallelReportPortal
@@ -27,6 +29,13 @@ module ParallelReportPortal
         @feature = nil
         @tree = Tree::TreeNode.new( 'root' )
         @ast_lookup = ast_lookup
+        check_faraday_compatibility
+      end
+
+      def check_faraday_compatibility
+        if Gem::Version.create(Faraday::VERSION) < Gem::Version.create('2.0')
+          Kernel.warn("Minimum of Faraday v2 is expected for compatibility with parallel_report_portal", category: :deprecated)
+        end
       end
 
       # Issued to start a launch. It is possilbe that this method could be called
