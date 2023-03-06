@@ -10,6 +10,8 @@ require 'webmock/rspec'
 
 require 'cucumber'
 require 'faraday'
+require 'faraday/net_http_persistent'
+require 'faraday/multipart'
 require 'ostruct'
 require 'tree'
 require 'yaml'

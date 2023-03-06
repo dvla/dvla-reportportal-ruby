@@ -38,7 +38,7 @@ RSpec.describe ParallelReportPortal::HTTP do
           'Content-Type' => 'application/json'
         })
 
-        expect(conn.builder.handlers).not_to include(Faraday::Request::Multipart, Faraday::Request::UrlEncoded)
+        expect(conn.builder.handlers).not_to include(Faraday::Multipart::Middleware, Faraday::Request::UrlEncoded)
       end
 
       it 'uses a persistent HTTP adapter' do
@@ -59,7 +59,7 @@ RSpec.describe ParallelReportPortal::HTTP do
           'Content-Type' => 'application/json'
         })
 
-        expect(conn.builder.handlers).to include(Faraday::Request::Multipart, Faraday::Request::UrlEncoded)
+        expect(conn.builder.handlers).to include(Faraday::Multipart::Middleware, Faraday::Request::UrlEncoded)
       end
 
       it 'uses a persistent HTTP adapter' do
