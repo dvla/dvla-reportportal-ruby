@@ -26,7 +26,7 @@ module ParallelReportPortal
     end
 
     # Get a preconstructed Faraday HTTP connection
-    # which has the endpont and headers ready populated.
+    # which has the endpoint and headers ready populated.
     # This object is memoized.
     #
     # @return [Faraday::Connection] connection the HTTP connection object
@@ -47,7 +47,7 @@ module ParallelReportPortal
     end
 
     # Get a preconstructed Faraday HTTP multipart connection
-    # which has the endpont and headers ready populated.
+    # which has the endpoint and headers ready populated.
     # This object is memoized.
     #
     # @return [Faraday::Connection] connection the HTTP connection object
@@ -190,13 +190,15 @@ module ParallelReportPortal
 
     # Request that Report Portal records a log record
     def req_log(test_case_id, detail, level, time)
-      resp = ParallelReportPortal.http_connection.post('log') do |req|
-        req.body = {
-          item_id: test_case_id,
-          message: detail,
-          level: level,
-          time: time,
-        }.to_json
+      call_with_retry(3, Faraday::SSLError) do
+        resp = ParallelReportPortal.http_connection.post('log') do |req|
+          req.body = {
+            item_id: test_case_id,
+            message: detail,
+            level: level,
+            time: time,
+          }.to_json
+        end
       end
     end
 
@@ -233,6 +235,19 @@ module ParallelReportPortal
             file: Faraday::UploadIO.new(file, mime_type)
           }
         end
+      end
+    end
+
+    private
+
+    def call_with_retry(retries_to_attempt, expected_error, &block)
+      retry_count = 0
+      begin
+        block.call
+      rescue expected_error
+        p 'in Retry Block'
+        retry_count += 1
+        retry_count > retries_to_attempt ? raise : retry
       end
     end
   end

@@ -187,6 +187,32 @@ RSpec.describe ParallelReportPortal::HTTP do
         } )
     end
 
+    it 'throws a Faraday::SSLError if the maximum number of retries are exceeded while issuing a log request' do
+      stub_request(:post, "#{rp_endpoint}/log").and_raise(Faraday::SSLError)
+
+      expect { rp.req_log(item_id, 'a message', 'info', 0) }.to raise_error(Faraday::SSLError)
+    end
+
+    it 'does not raise a Faraday::SSLError if the retry is successful while issuing a log request' do
+      initial_call = true
+      stub_request(:post, "#{rp_endpoint}/log").and_return do
+        if initial_call
+          initial_call = false
+          raise Faraday::SSLError
+        else
+          {
+            body: "a",
+            status: 200,
+            headers: {
+              'Content-Length' => 1
+            }
+          }
+        end
+      end
+
+      expect { rp.req_log(item_id, 'a message', 'info', 0) }.to_not raise_error
+    end
+
     it 'issues a log request with an attachment' do
       stub_request(:post, "#{rp_endpoint}/log")
       temp_file = Tempfile.new
