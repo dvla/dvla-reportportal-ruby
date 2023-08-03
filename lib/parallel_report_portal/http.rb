@@ -245,7 +245,6 @@ module ParallelReportPortal
       begin
         block.call
       rescue expected_error
-        p 'in Retry Block'
         retry_count += 1
         retry_count > retries_to_attempt ? raise : retry
       end
