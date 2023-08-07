@@ -1,3 +1,4 @@
+require 'openssl'
 require 'parallel_report_portal/after_launch'
 require "parallel_report_portal/clock"
 require "parallel_report_portal/configuration"

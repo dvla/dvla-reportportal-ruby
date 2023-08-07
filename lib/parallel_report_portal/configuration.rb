@@ -56,13 +56,20 @@ module ParallelReportPortal
     #
     # The initializer will first attempt to load a configuration files called
     # +report_portal.yml+ (case insensitive) in the both the +config+ and current
-    # working directory (the former takes precidence). It will then apply
+    # working directory (the former takes precedence). It will then apply
     # any of the environment variable values.
     def initialize
       load_configuration_file
       ATTRIBUTES.each do |attr|
         env_value = get_env("rp_#{attr.to_s}")
         send(:"#{attr}=", env_value) if env_value
+      end
+
+      # If this is compiled against OpenSSL v3, we need to turn off the exception raising
+      # when the server closes the stream without sending an EOF message in advance
+      if OpenSSL::SSL.const_defined?(:OP_IGNORE_UNEXPECTED_EOF)
+        # Assign the additional parameter with a bitwise 'or' assignment
+        OpenSSL::SSL::SSLContext::DEFAULT_PARAMS[:options] |= OpenSSL::SSL::OP_IGNORE_UNEXPECTED_EOF
       end
     end
 
