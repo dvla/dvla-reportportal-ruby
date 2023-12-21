@@ -14,7 +14,7 @@ module ParallelReportPortal
   #
   # == Environment variables
   #
-  # REPORT_PORTAL_API_KEY:: The API key required for authentication
+  # RP_API_KEY:: The API key required for authentication
   # RP_ENDPOINT:: the URL of the Report Portal API endpoint
   # RP_PROJECT:: the Report Portal project name -- this must already exist within Report Port and this user must be a member of the project
   # RP_LAUNCH:: The name of this launch
@@ -61,7 +61,7 @@ module ParallelReportPortal
     def initialize
       load_configuration_file
       ATTRIBUTES.each do |attr|
-        env_value = get_env("rp_#{attr.to_s}") || get_env("report_portal_#{attr.to_s}")
+        env_value = get_env("rp_#{attr.to_s}")
         send(:"#{attr}=", env_value) if env_value
       end
 
@@ -153,8 +153,6 @@ module ParallelReportPortal
           ATTRIBUTES.each do |attr|
             yaml_key = if yaml.has_key?("rp_#{attr}".to_sym)
                          "rp_#{attr}".to_sym
-                       elsif yaml.has_key?("report_portal_#{attr}".to_sym)
-                         "report_portal_#{attr}".to_sym
                        else
                          attr
                        end
