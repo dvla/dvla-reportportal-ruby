@@ -1,5 +1,6 @@
 require 'logger'
 require 'tempfile'
+require 'pry'
 
 module ParallelReportPortal
   # A collection of methods for communicating with the ReportPortal
@@ -22,7 +23,7 @@ module ParallelReportPortal
     #
     # @return [String] header the bearer header value
     def authorization_header
-      "Bearer #{ParallelReportPortal.configuration.uuid}"
+      "Bearer #{ParallelReportPortal.configuration.api_key}"
     end
 
     # Get a preconstructed Faraday HTTP connection
@@ -81,7 +82,11 @@ module ParallelReportPortal
                 mode: (ParallelReportPortal.configuration.debug ? 'DEBUG' : 'DEFAULT' ),
                 attributes: ParallelReportPortal.configuration.attributes
               }.to_json
-            end
+      end
+
+      pp "#########################"
+      pp resp
+
       if resp.success?
         JSON.parse(resp.body)['id']
       else
