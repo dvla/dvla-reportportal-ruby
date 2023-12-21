@@ -1,6 +1,5 @@
 require 'logger'
 require 'tempfile'
-require 'pry'
 
 module ParallelReportPortal
   # A collection of methods for communicating with the ReportPortal
@@ -83,9 +82,6 @@ module ParallelReportPortal
                 attributes: ParallelReportPortal.configuration.attributes
               }.to_json
       end
-
-      pp "#########################"
-      pp resp
 
       if resp.success?
         JSON.parse(resp.body)['id']
