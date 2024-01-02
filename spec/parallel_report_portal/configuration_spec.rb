@@ -4,17 +4,17 @@ RSpec.describe ParallelReportPortal::Configuration do
     let(:configurable_attributes) { ParallelReportPortal::Configuration::ATTRIBUTES }
 
     it 'reflects over the settable attributes' do
-      expected_attrs = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout]
+      expected_attrs = [:api_key, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout]
       expect(configurable_attributes).to contain_exactly(*expected_attrs)
     end
   end
 
   context 'has accessors' do
     let(:config) { ParallelReportPortal::Configuration.new }
-    it 'allows setting the UUID' do
-      uuid = '0a14044a-65fb-4981-b4b0-e699f99b4e59'
-      config.uuid = uuid
-      expect(config.uuid).to eq(uuid)
+    it 'allows setting the API_KEY' do
+      api_key = '0a14044a-65fb-4981-b4b0-e699f99b4e59'
+      config.api_key = api_key
+      expect(config.api_key).to eq(api_key)
     end
 
     it 'allows setting the endpoint' do
@@ -94,7 +94,7 @@ RSpec.describe ParallelReportPortal::Configuration do
       expect(Dir).to receive(:[]).with('./config/*').and_return([])
       expect(Dir).to receive(:[]).with('./*').and_return(['./report_portal.yml'])
       expect(File).to receive(:read).with('./report_portal.yml').and_return(<<~CONFIG)
-        uuid: 0a14044a-65fb-4981-b4b0-e699f99b4e59
+        api_key: 0a14044a-65fb-4981-b4b0-e699f99b4e59
         endpoint: https://url.local:10000/a/path
         project: rp_project
         launch: rp_launch_name
@@ -105,7 +105,7 @@ RSpec.describe ParallelReportPortal::Configuration do
       config = ParallelReportPortal::Configuration.new
 
       aggregate_failures 'values are set' do
-        expect(config.uuid).to eq('0a14044a-65fb-4981-b4b0-e699f99b4e59')
+        expect(config.api_key).to eq('0a14044a-65fb-4981-b4b0-e699f99b4e59')
         expect(config.endpoint).to eq('https://url.local:10000/a/path')
         expect(config.project).to eq('rp_project')
         expect(config.launch).to eq('rp_launch_name')
@@ -117,7 +117,7 @@ RSpec.describe ParallelReportPortal::Configuration do
       expect(Dir).to receive(:[]).with('./config/*').and_return(['./config/report_portal.yml'])
       expect(Dir).to receive(:[]).with('./*').and_return([])
       expect(File).to receive(:read).with('./config/report_portal.yml').and_return(<<~CONFIG)
-        uuid: 0a14044a-65fb-4981-b4b0-e699f99b4e59
+        api_key: 0a14044a-65fb-4981-b4b0-e699f99b4e59
         endpoint: https://url.local:10000/a/path
         project: rp_project
         launch: rp_launch_name
@@ -128,7 +128,7 @@ RSpec.describe ParallelReportPortal::Configuration do
       config = ParallelReportPortal::Configuration.new
 
       aggregate_failures 'values are set' do
-        expect(config.uuid).to eq('0a14044a-65fb-4981-b4b0-e699f99b4e59')
+        expect(config.api_key).to eq('0a14044a-65fb-4981-b4b0-e699f99b4e59')
         expect(config.endpoint).to eq('https://url.local:10000/a/path')
         expect(config.project).to eq('rp_project')
         expect(config.launch).to eq('rp_launch_name')
@@ -140,7 +140,7 @@ RSpec.describe ParallelReportPortal::Configuration do
       expect(Dir).to receive(:[]).with('./config/*').and_return([])
       expect(Dir).to receive(:[]).with('./*').and_return(['./report_portal.yml'])
       expect(File).to receive(:read).with('./report_portal.yml').and_return(<<~CONFIG)
-        rp_uuid: 0a14044a-65fb-4981-b4b0-e699f99b4e59
+        rp_api_key: 0a14044a-65fb-4981-b4b0-e699f99b4e59
         rp_endpoint: https://url.local:10000/a/path
         rp_project: rp_project
         rp_launch: rp_launch_name
@@ -151,7 +151,7 @@ RSpec.describe ParallelReportPortal::Configuration do
       config = ParallelReportPortal::Configuration.new
 
       aggregate_failures 'values are set' do
-        expect(config.uuid).to eq('0a14044a-65fb-4981-b4b0-e699f99b4e59')
+        expect(config.api_key).to eq('0a14044a-65fb-4981-b4b0-e699f99b4e59')
         expect(config.endpoint).to eq('https://url.local:10000/a/path')
         expect(config.project).to eq('rp_project')
         expect(config.launch).to eq('rp_launch_name')
@@ -163,7 +163,7 @@ RSpec.describe ParallelReportPortal::Configuration do
       expect(Dir).to receive(:[]).with('./config/*').and_return([])
       expect(Dir).to receive(:[]).with('./*').and_return(['./report_portal.yml'])
       expect(File).to receive(:read).with('./report_portal.yml').and_return(<<~CONFIG)
-        RP_UUID: 0a14044a-65fb-4981-b4b0-e699f99b4e59
+        RP_API_KEY: 0a14044a-65fb-4981-b4b0-e699f99b4e59
         RP_ENDPOINT: https://url.local:10000/a/path
         RP_PROJECT: rp_project
         RP_LAUNCH: rp_launch_name
@@ -174,7 +174,7 @@ RSpec.describe ParallelReportPortal::Configuration do
       config = ParallelReportPortal::Configuration.new
 
       aggregate_failures 'values are set' do
-        expect(config.uuid).to eq('0a14044a-65fb-4981-b4b0-e699f99b4e59')
+        expect(config.api_key).to eq('0a14044a-65fb-4981-b4b0-e699f99b4e59')
         expect(config.endpoint).to eq('https://url.local:10000/a/path')
         expect(config.project).to eq('rp_project')
         expect(config.launch).to eq('rp_launch_name')
@@ -220,16 +220,16 @@ RSpec.describe ParallelReportPortal::Configuration do
       expect(config.project).to eq(project)
     end  
 
-    it 'accepts RP_UUID' do
-      uuid = ENV['RP_UUID'] = '0a14044a-65fb-4981-b4b0-e699f99b4e59'
+    it 'accepts RP_API_KEY' do
+      api_key = ENV['RP_API_KEY'] = '0a14044a-65fb-4981-b4b0-e699f99b4e59'
       config = ParallelReportPortal::Configuration.new
-      expect(config.uuid).to eq(uuid)
+      expect(config.api_key).to eq(api_key)
     end  
 
-    it 'accepts rp_uuid' do
-      uuid = ENV['rp_uuid'] = '0a14044a-65fb-4981-b4b0-e699f99b4e59'
+    it 'accepts rp_api_key' do
+      api_key = ENV['rp_api_key'] = '0a14044a-65fb-4981-b4b0-e699f99b4e59'
       config = ParallelReportPortal::Configuration.new
-      expect(config.uuid).to eq(uuid)
+      expect(config.api_key).to eq(api_key)
     end
 
     it 'accepts RP_DESCRIPTION' do

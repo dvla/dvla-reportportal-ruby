@@ -46,7 +46,7 @@ read_timeout: 60
 
 It will search for the following environment variables which may be in upper or lowercase (the official client defers to lower case, this is available here for compatibility).
 
-- `RP_UUID` - the user's UUID for this Report Portal instance which must be created in advance
+- `RP_API_KEY` - the API Key for this Report Portal instance which must be created in advance
 - `RP_ENDPOINT` - the endpoint for this Report Portal instance
 - `RP_PROJECT` - the Report Portal project name which must be created in advance and this user added as a member
 - `RP_LAUNCH` - the name of this 'launch'

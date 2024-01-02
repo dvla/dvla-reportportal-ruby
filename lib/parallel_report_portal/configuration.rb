@@ -14,7 +14,7 @@ module ParallelReportPortal
   #
   # == Environment variables
   #
-  # RP_UUID:: The UUID of the user associated with this launch
+  # RP_API_KEY:: The API key required for authentication
   # RP_ENDPOINT:: the URL of the Report Portal API endpoint
   # RP_PROJECT:: the Report Portal project name -- this must already exist within Report Port and this user must be a member of the project
   # RP_LAUNCH:: The name of this launch
@@ -22,10 +22,10 @@ module ParallelReportPortal
   # RP_TAGS:: A set of tags to pass to Report Portal for this launch. If these are set via an environment variable, provide a comma-separated string of tags
   # RP_ATTRIBUTES:: A set of attribute tags to pass to Report Portal for this launch. If these are set via an environment variable, provide a comma-separated string of attributes
   class Configuration
-    ATTRIBUTES = [:uuid, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout]
+    ATTRIBUTES = [:api_key, :endpoint, :project, :launch, :debug, :description, :tags, :attributes, :open_timeout, :idle_timeout, :read_timeout]
 
-    # @return [String] the Report Portal user UUID
-    attr_accessor :uuid
+    # @return [String] the Report Portal API key required for authorization
+    attr_accessor :api_key
     # @return [String] the Report Portal URI - this should include the scheme
     #   e.g. +https://reportportal.local/api/v1+
     attr_accessor :endpoint

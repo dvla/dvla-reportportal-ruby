@@ -8,7 +8,7 @@ RSpec.describe ParallelReportPortal::HTTP do
 
   let(:rp) do
     ParallelReportPortal.configure do |config|
-      config.uuid = '0a14044a-65fb-4981-b4b0-e699f99b4e59'
+      config.api_key = '0a14044a-65fb-4981-b4b0-e699f99b4e59'
       config.endpoint = 'https://url.local:10000/a/path'
       config.project = 'rp_project'
       config.launch = 'rp_launch_name'
@@ -25,7 +25,7 @@ RSpec.describe ParallelReportPortal::HTTP do
     end
 
     it 'can create the bearer header' do
-      expect(rp.authorization_header).to eq("Bearer #{rp.configuration.uuid}")
+      expect(rp.authorization_header).to eq("Bearer #{rp.configuration.api_key}")
     end
 
     context 'creating a HTTP connection object' do
@@ -34,7 +34,7 @@ RSpec.describe ParallelReportPortal::HTTP do
         expect(conn).to be_kind_of(Faraday::Connection)
         expect(conn.url_prefix.to_s).to eq("#{rp.configuration.endpoint}/#{rp.configuration.project}")
         expect(conn.headers).to include({
-          'Authorization' => "Bearer #{rp.configuration.uuid}",
+          'Authorization' => "Bearer #{rp.configuration.api_key}",
           'Content-Type' => 'application/json'
         })
 
@@ -53,7 +53,7 @@ RSpec.describe ParallelReportPortal::HTTP do
         expect(conn).to be_kind_of(Faraday::Connection)
         expect(conn.url_prefix.to_s).to eq("#{rp.configuration.endpoint}/#{rp.configuration.project}")
         expect(conn.headers).to include({
-          'Authorization' => "Bearer #{rp.configuration.uuid}"
+          'Authorization' => "Bearer #{rp.configuration.api_key}"
         })
         expect(conn.headers).not_to include({
           'Content-Type' => 'application/json'
