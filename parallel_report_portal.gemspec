@@ -41,6 +41,6 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'faraday-net_http_persistent', '~> 2.1'
   spec.add_runtime_dependency 'faraday-multipart', '~> 1.0', '>= 1.0.4'
   spec.add_runtime_dependency 'parallel_tests', '>= 2.29.1'
-  spec.add_runtime_dependency 'rubytree', '~> 1.0'
+  spec.add_runtime_dependency 'rubytree', '~> 2.0'
   spec.add_runtime_dependency 'net-http-persistent', '~> 4.0'
 end

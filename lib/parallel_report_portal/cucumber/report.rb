@@ -23,11 +23,10 @@ module ParallelReportPortal
         unknown: 'UNKNOWN'
       }
 
-
       # Create a new instance of the report
       def initialize(ast_lookup = nil)
         @feature = nil
-        @tree = Tree::TreeNode.new( 'root' )
+        @tree = Tree::TreeNode.new('root')
         @ast_lookup = ast_lookup
         check_faraday_compatibility
       end
@@ -38,7 +37,7 @@ module ParallelReportPortal
         end
       end
 
-      # Issued to start a launch. It is possilbe that this method could be called
+      # Issued to start a launch. It is possible that this method could be called
       # from multiple processes for the same launch if this is being run with
       # parallel tests enabled. A temporary launch file will be created (using
       # exclusive locking). The first time this method is called it will write the
@@ -48,13 +47,13 @@ module ParallelReportPortal
       # @param start_time [Integer] the millis from the epoch
       # @return [String] the UUID of this launch
       def launch_started(start_time)
-        ParallelReportPortal.file_open_exlock_and_block(ParallelReportPortal.launch_id_file, 'a+' ) do |file|
+        ParallelReportPortal.file_open_exlock_and_block(ParallelReportPortal.launch_id_file, 'a+') do |file|
           if file.size == 0
             @launch_id = ParallelReportPortal.req_launch_started(start_time)
             file.write(@launch_id)
             file.flush
           else
-             @launch_id = file.readline
+            @launch_id = file.readline
           end
           @launch_id
         end
@@ -65,12 +64,8 @@ module ParallelReportPortal
       # @param clock [Integer] the millis from the epoch
       def launch_finished(clock)
         @tree.postordered_each do |node|
-          response = ParallelReportPortal.req_feature_finished(node.content, clock) unless node.is_root?
-          parse_report_link_from_response(response)
+          ParallelReportPortal.http_repeater { ParallelReportPortal.req_feature_finished(node.content, clock) } unless node.is_root?
         end
-        response = ParallelReportPortal.req_launch_finished(launch_id, clock)
-        parse_report_link_from_response(response)
-        ParallelReportPortal.launch_finished_block.call if ParallelReportPortal.launch_finished_block
       end
 
       # Called to indicate that a feature has started.
@@ -114,7 +109,7 @@ module ParallelReportPortal
           if (using_cucumber_messages? ? test_step : step_source).multiline_arg.doc_string?
             detail << %(\n"""\n#{(using_cucumber_messages? ? test_step : step_source).multiline_arg.content}\n""")
           elsif (using_cucumber_messages? ? test_step : step_source).multiline_arg.data_table?
-            detail << (using_cucumber_messages? ? test_step : step_source).multiline_arg.raw.reduce("\n") {|acc, row| acc << "| #{row.join(' | ')} |\n"}
+            detail << (using_cucumber_messages? ? test_step : step_source).multiline_arg.raw.reduce("\n") { |acc, row| acc << "| #{row.join(' | ')} |\n" }
           end
 
           ParallelReportPortal.req_log(@test_case_id, detail, status_to_level(:trace), clock)
@@ -155,13 +150,14 @@ module ParallelReportPortal
                           else
                             feature.location.file.split(File::SEPARATOR)
                           end
-        ParallelReportPortal.file_open_exlock_and_block(ParallelReportPortal.hierarchy_file, 'a+b' ) do |file|
+
+        ParallelReportPortal.file_open_exlock_and_block(ParallelReportPortal.hierarchy_file, 'a+b') do |file|
           @tree = Marshal.load(File.read(file)) if file.size > 0
           node = @tree.root
           path_components[0..-2].each do |component|
             next_node = node[component]
             unless next_node
-              id = ParallelReportPortal.req_hierarchy(launch_id, "Folder: #{component}", node.content, 'SUITE', [], nil, clock )
+              id = ParallelReportPortal.req_hierarchy(launch_id, "Folder: #{component}", node.content, 'SUITE', [], nil, clock)
               next_node = Tree::TreeNode.new(component, id)
               node << next_node
               node = next_node
@@ -219,7 +215,7 @@ module ParallelReportPortal
         if using_cucumber_messages?
           test_step.hook?
         else
-          ! test_step.source.last.respond_to?(:keyword)
+          !test_step.source.last.respond_to?(:keyword)
         end
       end
 
@@ -233,13 +229,6 @@ module ParallelReportPortal
           LOG_LEVELS[:warn]
         else
           LOG_LEVELS.fetch(status, LOG_LEVELS[:info])
-        end
-      end
-
-      def parse_report_link_from_response(response)
-        if response
-          json = JSON.parse(response.body)
-          ParallelReportPortal.report_url = json['link'] if json['link']
         end
       end
     end
