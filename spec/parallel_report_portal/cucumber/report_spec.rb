@@ -37,24 +37,6 @@ RSpec.describe ParallelReportPortal::Cucumber::Report do
   context 'handling launch finished events' do
     let(:uuid) { 'b56818b2-391e-4844-8a6e-144afaf504ed' }
 
-    it 'terminates the launch' do
-      report.instance_variable_set(:@launch_id, uuid)
-      expect(ParallelReportPortal).to receive(:req_launch_finished)
-        .with(uuid, 0).once
-      
-      report.launch_finished(0)
-    end
-
-    it 'issues executes a post launch hook' do
-      report.instance_variable_set(:@launch_id, uuid)
-      expect(ParallelReportPortal).to receive(:req_launch_finished)
-
-      called = false
-      ParallelReportPortal.after_launch { called = true }
-      report.launch_finished(0)
-      expect(called).to eq true
-    end
-
     it 'terminates any existing child items before terminating the launch' do
       tree = Tree::TreeNode.new( 'root' )
       tree << Tree::TreeNode.new('child', 'child_node_uuid')
@@ -62,8 +44,6 @@ RSpec.describe ParallelReportPortal::Cucumber::Report do
       report.instance_variable_set(:@launch_id, uuid)
       report.instance_variable_set(:@tree, tree)
 
-      expect(ParallelReportPortal).to receive(:req_launch_finished)
-        .with(uuid, 0).once
       expect(ParallelReportPortal).to receive(:req_feature_finished)
         .with('child_node_uuid', 0).once
 

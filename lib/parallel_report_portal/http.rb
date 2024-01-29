@@ -6,6 +6,8 @@ module ParallelReportPortal
   # REST interface.
   module HTTP
 
+    class HTTPBadGatewayError < StandardError; end
+
     # Creating class level logger and setting log level
     @@logger = Logger.new(STDOUT)
     @@logger.level = Logger::ERROR
@@ -93,8 +95,29 @@ module ParallelReportPortal
     # Send a request to Report Portal to finish a launch.
     # It will bubble up any Faraday connection exceptions.
     def req_launch_finished(launch_id, time)
-      ParallelReportPortal.http_connection.put("launch/#{launch_id}/finish") do |req|
+      @@logger.debug { "Launch finish with ID: '#{launch_id}'" }
+
+      response = ParallelReportPortal.http_connection.put("launch/#{launch_id}/finish") do |req|
         req.body = { end_time: time }.to_json
+      end
+
+      @@logger.error { "Launch finish failed with response code #{response.status} -- message #{response.body}" } unless response.success?
+      response
+    end
+
+    def force_stop(launch_id, time)
+      resp = ParallelReportPortal.http_connection.put("launch/#{launch_id}/stop") do |req|
+        req.body = { end_time: time, status: :stopped }.to_json
+      end
+      @@logger.warn { "Failed to force stop: response code #{resp.status} -- message #{resp.body}" } unless resp.success?
+
+      resp
+    end
+
+    def parse_report_link_from_response(response)
+      if response
+        json = JSON.parse(response.body)
+        ParallelReportPortal.report_url = json['link'] if json['link']
       end
     end
 
@@ -145,9 +168,14 @@ module ParallelReportPortal
 
     # Send a request to Report Portal that a feature has completed.
     def req_feature_finished(feature_id, time)
-      ParallelReportPortal.http_connection.put("item/#{feature_id}") do |req|
+      response = ParallelReportPortal.http_connection.put("item/#{feature_id}") do |req|
         req.body = { end_time: time }.to_json
       end
+      @@logger.debug { "Feature finish with ID: '#{feature_id}'" }
+
+
+      @@logger.error { "Feature finish failed with response code #{response.status} -- message #{response.body}" } unless response.success?
+      response
     end
 
     # Send a request to ReportPortal to start a test case.
@@ -235,6 +263,24 @@ module ParallelReportPortal
           }
         end
       end
+    end
+
+
+
+    def http_repeater(&block)
+      tries = 0
+      begin
+        tries += 1
+        response = block.call
+        raise HTTPBadGatewayError if response && !response.success? && response.status == 502
+      rescue HTTPBadGatewayError => _e
+        if tries <= 3
+          sleep(1)
+          @@logger.warn { 'HTTP call failed, retrying...' }
+          retry
+        end
+      end
+      response
     end
   end
 end

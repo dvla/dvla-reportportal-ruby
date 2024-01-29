@@ -33,6 +33,11 @@ module ParallelReportPortal
     if ParallelReportPortal.parallel?
       if ParallelTests.first_process?
         ParallelTests.wait_for_other_processes_to_finish
+
+        launch_id = File.read(launch_id_file)
+        response = http_repeater { req_launch_finished(launch_id, clock) }
+        response.success? ? parse_report_link_from_response(response) : force_stop(launch_id, clock)
+
         delete_file(launch_id_file)
         delete_file(hierarchy_file)
       end
